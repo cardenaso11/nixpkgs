@@ -1,6 +1,6 @@
 { stdenv, fetchgit, fetchFromGitHub, cmake, pkgconfig, git, python3,
   python3Packages, glslang, spirv-tools, x11, libxcb, libXrandr,
-  libXext, wayland, libGL, makeWrapper }:
+  libXext, wayland, libGL_driver, makeWrapper }:
 
 let
   version = "1.1.70.0";
@@ -24,7 +24,7 @@ stdenv.mkDerivation rec {
 
   cmakeFlags = [
     "-DBUILD_WSI_MIR_SUPPORT=OFF"
-    "-DFALLBACK_DATA_DIRS=${libGL.driverLink}/share:/usr/local/share:/usr/share"
+    "-DFALLBACK_DATA_DIRS=${libGL_driver.driverLink}/share:/usr/local/share:/usr/share"
   ];
 
   outputs = [ "out" "dev" "demos" ];
@@ -48,8 +48,8 @@ stdenv.mkDerivation rec {
     cp -d loader/libvulkan.so* $out/lib
     cp demos/vulkaninfo $out/bin
     mkdir -p $out/lib $out/share/vulkan/explicit_layer.d
-    cp -d layers/*.so $out/lib/
-    cp -d layers/*.json $out/share/vulkan/explicit_layer.d/
+    cp -L layers/*.so $out/lib/
+    cp -L layers/*.json $out/share/vulkan/explicit_layer.d/
     sed -i "s:\\./lib:$out/lib/lib:g" "$out/share/vulkan/"*/*.json
     mkdir -p $dev/include
     cp -rv ../include $dev/
