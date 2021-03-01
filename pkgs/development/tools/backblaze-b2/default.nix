@@ -1,37 +1,42 @@
-{ lib, buildPythonApplication, fetchFromGitHub, makeWrapper
-, arrow, futures, logfury, requests, six, tqdm
-}:
+{ fetchFromGitHub, lib, python3Packages }:
 
-buildPythonApplication rec {
+python3Packages.buildPythonApplication rec {
   pname = "backblaze-b2";
-  version = "1.1.0";
+  version = "2.1.0";
 
   src = fetchFromGitHub {
     owner = "Backblaze";
     repo = "B2_Command_Line_Tool";
     rev = "v${version}";
-    sha256 = "0697rcdsmxz51p4b8m8klx2mf5xnx6vx56vcf5jmzidh8mc38a6z";
+    sha256 = "1kkpvxqgh5pw4kr8lh5gy9d7960hv9zvajbjiqhj6xgykwbpbgmq";
   };
 
-  propagatedBuildInputs = [ arrow futures logfury requests six tqdm ];
+  propagatedBuildInputs = with python3Packages; [
+    b2sdk
+    class-registry
+    phx-class-registry
+    setuptools
+  ];
 
-  checkPhase = ''
-    python test_b2_command_line.py test
-  '';
+  checkInputs = with python3Packages; [ pytestCheckHook ];
+
+  disabledTests = [
+    "test_files_headers"
+    "test_integration"
+  ];
 
   postInstall = ''
     mv "$out/bin/b2" "$out/bin/backblaze-b2"
 
-    sed 's/^have b2 \&\&$/have backblaze-b2 \&\&/'   -i contrib/bash_completion/b2
-    sed 's/^\(complete -F _b2\) b2/\1 backblaze-b2/' -i contrib/bash_completion/b2
+    sed 's/b2/backblaze-b2/' -i contrib/bash_completion/b2
 
-    mkdir -p "$out/etc/bash_completion.d"
-    cp contrib/bash_completion/b2 "$out/etc/bash_completion.d/backblaze-b2"
+    mkdir -p "$out/share/bash-completion/completions"
+    cp contrib/bash_completion/b2 "$out/share/bash-completion/completions/backblaze-b2"
   '';
 
   meta = with lib; {
     description = "Command-line tool for accessing the Backblaze B2 storage service";
-    homepage = https://github.com/Backblaze/B2_Command_Line_Tool;
+    homepage = "https://github.com/Backblaze/B2_Command_Line_Tool";
     license = licenses.mit;
     maintainers = with maintainers; [ hrdinka kevincox ];
     platforms = platforms.unix;

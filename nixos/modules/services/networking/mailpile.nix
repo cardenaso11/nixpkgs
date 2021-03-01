@@ -18,18 +18,16 @@ in
   options = {
 
     services.mailpile = {
-      enable = mkOption {
-        default = false;
-        description = "
-          Whether to enable Mailpile the mail client.
-        ";
-      };
+      enable = mkEnableOption "Mailpile the mail client";
+
       hostname = mkOption {
+        type = types.str;
         default = "localhost";
         description = "Listen to this hostname or ip.";
       };
       port = mkOption {
-        default = "33411";
+        type = types.port;
+        default = 33411;
         description = "Listen on this port.";
       };
     };
@@ -41,14 +39,14 @@ in
 
   config = mkIf config.services.mailpile.enable {
 
-    users.extraUsers.mailpile =
+    users.users.mailpile =
       { uid = config.ids.uids.mailpile;
         description = "Mailpile user";
         createHome = true;
         home = "/var/lib/mailpile";
       };
 
-    users.extraGroups.mailpile =
+    users.groups.mailpile =
       { gid = config.ids.gids.mailpile;
       };
 

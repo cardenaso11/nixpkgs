@@ -1,15 +1,13 @@
 { build-idris-package
 , fetchFromGitHub
-, prelude
 , contrib
 , lib
-, idris
 }:
 build-idris-package  {
   name = "dict";
   version = "2016-12-26";
 
-  idrisDeps = [ prelude contrib ];
+  idrisDeps = [ contrib ];
 
   src = fetchFromGitHub {
     owner = "be5invis";
@@ -24,9 +22,8 @@ build-idris-package  {
 
   meta = {
     description = "Dict k v in Idris";
-    homepage = https://github.com/be5invis/idris-dict;
+    homepage = "https://github.com/be5invis/idris-dict";
     license = lib.licenses.mit;
     maintainers = [ lib.maintainers.brainrape ];
-    inherit (idris.meta) platforms;
   };
 }

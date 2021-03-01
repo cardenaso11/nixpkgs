@@ -2,32 +2,44 @@
   admiral = {
     owner = "jwaldrip";
     repo = "admiral.cr";
-    rev = "v1.6.1";
-    sha256 = "0y30b9b9rkz43afd3b9l24hs0r170qyc07r05kvydbv89376c53i";
+    rev = "v1.9.0";
+    sha256 = "0y8gsh1qz42bc9jawcrn0i49mzzfvf8znmivd8lybapf0f53fblz";
   };
   ameba = {
-    owner = "veelenga";
+    owner = "crystal-ameba";
     repo = "ameba";
-    rev = "v0.7.0";
-    sha256 = "01h0a1ba5l254r04mgkqhjdfn21cs0q7fmvk4gj35cj5lpr2bp17";
+    rev = "v0.12.0";
+    sha256 = "0g68yijbm2j4ig536fwq49d1z7x2iv9kp4g3gjklf5zn1sbqhm12";
   };
   baked_file_system = {
     owner = "schovi";
     repo = "baked_file_system";
-    rev = "e1447549d5ac0560720fae62179b2f2c62c9bfd1";
-    sha256 = "1fi6zag1a6h4xwrfizy01dls3hhraqw0cmpwj7rjv1qcddjgig5z";
+    rev = "v0.9.8";
+    sha256 = "12l375jllg1lxvfh610dz0a39p803xw6q9fxlmnc6hy55i0gm0y3";
   };
-  duktape = {
-    owner = "jessedoyle";
-    repo = "duktape.cr";
-    rev = "v0.14.1";
-    sha256 = "0fkay3qspzych050xl8xjkrphmxpzaj0dcf9jl22xwz8cx1l89f1";
+  diff = {
+    owner = "MakeNowJust";
+    repo = "crystal-diff";
+    rev = "v1.1.0";
+    sha256 = "1q5q2d5mp1r8c6k5v4755sb3b6awiz85d1j280djzhbd0pggk3z7";
+  };
+  dotenv = {
+    owner = "gdotdesign";
+    repo = "cr-dotenv";
+    rev = "v0.3.1";
+    sha256 = "1xp7c3g8dj1hqk2b885qr4y0s8661gpp9q28lv6rhr0ckllc6zgz";
+  };
+  exception_page = {
+    owner = "crystal-loot";
+    repo = "exception_page";
+    rev = "v0.1.4";
+    sha256 = "0bsp2m89sl0bg9d5szbs1nxyk7yk58rkk24aibr39hhb5zi70pqi";
   };
   kemal = {
     owner = "kemalcr";
     repo = "kemal";
-    rev = "a5870e7d24e5ec75c956bcf3e4423f55a2c4ff78";
-    sha256 = "1f2bm4xmfg6zqs3a8744pbk1vx964flf17g1mj01yslfcnzxywal";
+    rev = "v0.26.1";
+    sha256 = "169pwkjmk7x6j8i0rf5rpyk1y0hl7jaf9h6yrq4ha2ag9yq9i8fr";
   };
   kilt = {
     owner = "jeromegn";
@@ -35,11 +47,17 @@
     rev = "v0.4.0";
     sha256 = "1w9ib6j4xhwxdxx58nzc06gw7ci7vga03vgj1z1bnklamb0b0l0k";
   };
+  markd = {
+    owner = "icyleaf";
+    repo = "markd";
+    rev = "v0.2.0";
+    sha256 = "0n27fndd77mlkgw1r4pf0sa8fz4gwsh7dpnjck95c0ml91cr8j1a";
+  };
   radix = {
     owner = "luislavena";
     repo = "radix";
-    rev = "v0.3.8";
-    sha256 = "1kn2xxj8a8j6f6g1dr0s9mkrj1xqnpzw9wnbq24mbv8ach9a1hva";
+    rev = "v0.3.9";
+    sha256 = "19pksfr7ddc31hvikb433jg0zav1ar93k6zmsgaf3vsrjnvia3ix";
   };
   string_inflection = {
     owner = "mosop";

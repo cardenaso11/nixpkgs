@@ -1,11 +1,11 @@
 { lib, buildPythonPackage, fetchPypi,
-  dateutil, simplejson
+  dateutil, simplejson, isPy27
 }:
 
 buildPythonPackage rec {
   pname = "marshmallow";
-  name = "${pname}-${version}";
-  version = "2.15.3";
+  version = "3.9.1";
+  disabled = isPy27;
 
   meta = {
     homepage = "https://github.com/marshmallow-code/marshmallow";
@@ -18,7 +18,7 @@ buildPythonPackage rec {
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "171f409d48b44786b7df2793cbd7f1a9062f0fe2c14d547da536b5010f671ade";
+    sha256 = "73facc37462dfc0b27f571bdaffbef7709e19f7a616beb3802ea425b07843f4e";
   };
 
   propagatedBuildInputs = [ dateutil simplejson ];

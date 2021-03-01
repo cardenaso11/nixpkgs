@@ -4,12 +4,11 @@
 
 buildPythonPackage rec {
   pname = "serpy";
-  name = "${pname}-${version}";
   version = "0.3.1";
 
   meta = {
     description = "ridiculously fast object serialization";
-    homepage = https://github.com/clarkduvall/serpy;
+    homepage = "https://github.com/clarkduvall/serpy";
     license = lib.licenses.mit;
   };
 

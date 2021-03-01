@@ -5,7 +5,7 @@ with haskellLib;
 self: super: {
 
   # Suitable LLVM version.
-  llvmPackages = pkgs.llvmPackages_39;
+  llvmPackages = pkgs.llvmPackages;
 
   # Disable GHC 8.2.x core libraries.
   array = null;
@@ -20,6 +20,7 @@ self: super: {
   ghc-boot = null;
   ghc-boot-th = null;
   ghc-compact = null;
+  ghc-heap = null;
   ghc-prim = null;
   ghci = null;
   haskeline = null;
@@ -36,23 +37,20 @@ self: super: {
   unix = null;
   xhtml = null;
 
-  # Make sure we can still build Cabal 1.x.
-  Cabal_1_24_2_0 = overrideCabal super.Cabal_1_24_2_0 (drv: {
-    prePatch = "sed -i -e 's/process.*< 1.5,/process,/g' Cabal.cabal";
-  });
+  # These are now core libraries in GHC 8.4.x.
+  mtl = self.mtl_2_2_2;
+  parsec = self.parsec_3_1_14_0;
+  stm = self.stm_2_5_0_0;
+  text = self.text_1_2_4_0;
 
-  # Build with the latest Cabal version, which works best albeit not perfectly.
-  jailbreak-cabal = super.jailbreak-cabal.override { Cabal = self.Cabal_2_2_0_1; };
+  # Needs Cabal 3.0.x.
+  jailbreak-cabal = super.jailbreak-cabal.override { Cabal = self.Cabal_3_2_1_0; };
 
   # https://github.com/bmillwood/applicative-quoters/issues/6
   applicative-quoters = appendPatch super.applicative-quoters (pkgs.fetchpatch {
     url = "https://patch-diff.githubusercontent.com/raw/bmillwood/applicative-quoters/pull/7.patch";
     sha256 = "026vv2k3ks73jngwifszv8l59clg88pcdr4mz0wr0gamivkfa1zy";
   });
-
-  # http://hub.darcs.net/dolio/vector-algorithms/issue/9#comment-20170112T145715
-  vector-algorithms = dontCheck super.vector-algorithms;
-
 
   # https://github.com/nominolo/ghc-syb/issues/20
   ghc-syb-utils = dontCheck super.ghc-syb-utils;
@@ -65,7 +63,7 @@ self: super: {
   # https://github.com/jystic/hadoop-tools/issues/31
   hadoop-rpc =
     let patch = pkgs.fetchpatch
-          { url = https://github.com/shlevy/hadoop-tools/commit/f03a46cd15ce3796932c3382e48bcbb04a6ee102.patch;
+          { url = "https://github.com/shlevy/hadoop-tools/commit/f03a46cd15ce3796932c3382e48bcbb04a6ee102.patch";
             sha256 = "09ls54zy6gx84fmzwgvx18ssgm740cwq6ds70p0p125phi54agcp";
             stripLen = 1;
           };
@@ -75,7 +73,7 @@ self: super: {
   # https://github.com/NICTA/coordinate/pull/4
   coordinate =
     let patch = pkgs.fetchpatch
-          { url = https://github.com/NICTA/coordinate/pull/4.patch;
+          { url = "https://github.com/NICTA/coordinate/pull/4.patch";
             sha256 = "06sfxk5cyd8nqgjyb95jkihxxk8m6dw9m3mlv94sm2qwylj86gqy";
           };
     in appendPatch super.coordinate patch;
@@ -87,11 +85,13 @@ self: super: {
   cabal2nix = super.cabal2nix.overrideScope (self: super: { Cabal = self.Cabal_2_2_0_1; });
   cabal2spec = super.cabal2spec.overrideScope (self: super: { Cabal = self.Cabal_2_2_0_1; });
   distribution-nixpkgs = super.distribution-nixpkgs.overrideScope (self: super: { Cabal = self.Cabal_2_2_0_1; });
-  hackage-db_2_0_1 = super.hackage-db_2_0_1.overrideScope (self: super: { Cabal = self.Cabal_2_2_0_1; });
   stack = super.stack.overrideScope (self: super: { Cabal = self.Cabal_2_2_0_1; });
-  stylish-cabal = dontCheck (super.stylish-cabal.overrideScope (self: super: {
-    Cabal = self.Cabal_2_2_0_1;
-    haddock-library = dontHaddock (dontCheck self.haddock-library_1_5_0_1);
-  }));
+
+  # Older GHC versions need these additional dependencies.
+  ListLike = addBuildDepend super.ListLike self.semigroups;
+  base-compat-batteries = addBuildDepend super.base-compat-batteries self.contravariant;
+
+  # ghc versions prior to 8.8.x needs additional dependency to compile successfully.
+  ghc-lib-parser-ex = addBuildDepend super.ghc-lib-parser-ex self.ghc-lib-parser;
 
 }

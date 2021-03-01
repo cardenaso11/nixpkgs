@@ -1,7 +1,17 @@
-{ lib, callPackage, fetchurl, fetchpatch }:
+{ lib, callPackage, fetchpatch, fetchurl, stdenv, pkgsi686Linux }:
 
 let
-  generic = args: callPackage (import ./generic.nix args) { };
+  generic = args: let
+    imported = import ./generic.nix args;
+  in if ((!lib.versionOlder args.version "391")
+    && stdenv.hostPlatform.system != "x86_64-linux") then null
+  else callPackage imported {
+    lib32 = (pkgsi686Linux.callPackage imported {
+      libsOnly = true;
+      kernel = null;
+    }).out;
+  };
+
   kernel = callPackage # a hacky way of extracting parameters from callPackage
     ({ kernel, libsOnly ? false }: if libsOnly then { } else kernel) { };
 
@@ -16,33 +26,59 @@ let
 in
 rec {
   # Policy: use the highest stable version as the default (on our master).
-  stable = generic {
-    version = "390.67";
-    sha256_32bit = "01c8fa80njyyr39c1pyf7ssmfq65ci8mapbs94fd6gnhwc7gfjkg";
-    sha256_64bit = "0np6xj93fali2hss8xsdlmy5ykjgn4hx6mzjr8dpbdi0fhdcmwkd";
-    settingsSha256 = "1wk4587czysnbj5yxijmv3bldcffzwp4yvfx133apsr31dqca0s7";
-    persistencedSha256 = "1zia1r97lyj6fbmvsw4hv5qfcj84x3sz971m4430d8qyks2c4sdw";
+  stable = if stdenv.hostPlatform.system == "x86_64-linux"
+    then generic {
+      version = "460.39";
+      sha256_64bit = "0zx3v4xas9z18yv1z3irp626h8kvcg8aw344sqpacfh1g106dw0b";
+      settingsSha256 = "15fa6lmfmgg02gya47ynx5d7cqsb73w4rbg4ly7lc1pnwl5f9qhm";
+      persistencedSha256 = "1dj3w03fa1i32c9c7w9392bg3nr2dk8mm4qm0wv12cv587zml0gx";
+    }
+    else legacy_390;
+
+  beta = generic {
+    version = "460.27.04";
+    sha256_64bit = "plTqtc5QZQwM0f3MeMZV0N5XOiuSXCCDklL/qyy8HM8=";
+    settingsSha256 = "hU9J0VSrLXs7N14zq6U5LbBLZXEIyTfih/Bj6eFcMf0=";
+    persistencedSha256 = "PmqhoPskqhJe2FxMrQh9zX1BWQCR2kkfDwvA89+XALA=";
   };
 
-  beta = stable; # not enough interest to maintain beta ATM
+  # Vulkan developer beta driver
+  # See here for more information: https://developer.nvidia.com/vulkan-driver
+  vulkan_beta = generic rec {
+    version = "455.46.04";
+    persistencedVersion = "455.45.01";
+    settingsVersion = "455.45.01";
+    sha256_64bit = "1iv42w3x1vc00bgn6y4w1hnfsvnh6bvj3vcrq8hw47760sqwa4xa";
+    settingsSha256 = "09v86y2c8xas9ql0bqr7vrjxx3if6javccwjzyly11dzffm02h7g";
+    persistencedSha256 = "13s4b73il0lq2hs81q03176n16mng737bfsp3bxnxgnrv3whrayz";
+    url = "https://developer.nvidia.com/vulkan-beta-${lib.concatStrings (lib.splitString "." version)}-linux";
+  };
 
+  # Last one supporting x86
+  legacy_390 = generic {
+    version = "390.138";
+    sha256_32bit = "0y3qjygl0kfz9qs0rp9scn1k3l8ym9dib7wpkyh5gs4klcip7xkv";
+    sha256_64bit = "0rnnb5l4i8s76vlg6yvlrxhm2x9wdqw7k5hgf4fyaa3cr3k1kysz";
+    settingsSha256 = "0ad6hwl56nvbdv9g85lw7ywadqvc2gaq9x6d2vjcia9kg4vrmfqx";
+    persistencedSha256 = "15jciyq6i3pz1g67xzqlwmc62v3xswzhjcqmfcdndvlvhcibsimr";
+  };
 
   legacy_340 = generic {
-    version = "340.104";
-    sha256_32bit = "1l8w95qpxmkw33c4lsf5ar9w2fkhky4x23rlpqvp1j66wbw1b473";
-    sha256_64bit = "18k65gx6jg956zxyfz31xdp914sq3msn665a759bdbryksbk3wds";
-    settingsSha256 = "1vvpqimvld2iyfjgb9wvs7ca0b0f68jzfdpr0icbyxk4vhsq7sxk";
-    persistencedSha256 = "0zqws2vsrxbxhv6z0nn2galnghcsilcn3s0f70bpm6jqj9wzy7x8";
+    version = "340.108";
+    sha256_32bit = "1jkwa1phf0x4sgw8pvr9d6krmmr3wkgwyygrxhdazwyr2bbalci0";
+    sha256_64bit = "06xp6c0sa7v1b82gf0pq0i5p0vdhmm3v964v0ypw36y0nzqx8wf6";
+    settingsSha256 = "0zm29jcf0mp1nykcravnzb5isypm8l8mg2gpsvwxipb7nk1ivy34";
+    persistencedSha256 = "1ax4xn3nmxg1y6immq933cqzw6cj04x93saiasdc0kjlv0pvvnkn";
     useGLVND = false;
 
-    patches = maybePatch_drm_legacy ++ [ ./vm_operations_struct-fault.patch ];
+    patches = [ ./vm_operations_struct-fault.patch ];
   };
 
   legacy_304 = generic {
     version = "304.137";
     sha256_32bit = "1y34c2gvmmacxk2c72d4hsysszncgfndc4s1nzldy2q9qagkg66a";
     sha256_64bit = "1qp3jv6279k83k3z96p6vg3dd35y9bhmlyyyrkii7sib7bdmc7zb";
-    settingsSha256 = "0i5znfq6jkabgi8xpcy12pdpww6a67i8mq60z1kjq36mmnb25pmi";
+    settingsSha256 = "129f0j0hxzjd7g67qwxn463rxp295fsq8lycwm6272qykmab46cj";
     persistencedSha256 = null;
     useGLVND = false;
     useProfiles = false;
@@ -63,5 +99,6 @@ rec {
         '';
     in applyPatches [ "fix-typos" ];
     patches = maybePatch_drm_legacy;
+    broken = lib.versionAtLeast kernel.version "4.18";
   };
 }

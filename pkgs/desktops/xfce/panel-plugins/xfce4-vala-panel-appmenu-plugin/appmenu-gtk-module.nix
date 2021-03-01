@@ -1,6 +1,6 @@
-{ stdenv, fetchFromGitHub, substituteAll, cmake, vala, glib, gtk2, gtk3 }:
+{ lib, stdenv, fetchFromGitHub, cmake, vala, glib, gtk2, gtk3 }:
 stdenv.mkDerivation rec {
-  name = "vala-panel-appmenu-xfce-${version}";
+  pname = "vala-panel-appmenu-xfce";
   version = "0.6.94";
 
   src = "${fetchFromGitHub {
@@ -23,8 +23,8 @@ stdenv.mkDerivation rec {
     cp -r output/var/empty/* "$out"
   '';
 
-  meta = with stdenv.lib; {
-    description = "Port of the Unity GTK+ Module";
+  meta = with lib; {
+    description = "Port of the Unity GTK Module";
     license = licenses.lgpl3;
     maintainers = with maintainers; [ jD91mZM2 ];
   };

@@ -1,23 +1,21 @@
-{ stdenv
+{ lib, stdenv
 , fetch
 , cmake
 , libxml2
 , llvm
-, python
 , version
 }:
 
 stdenv.mkDerivation {
-  name = "lld-${version}";
+  pname = "lld";
+  inherit version;
 
-  src = fetch "lld" "02qfkjkjq0snmf8dw9c255xkh8dg06ndny1x470300pk7j1lm33b";
+  src = fetch "lld" "04afcfq2h7ysyqxxhyhb7ig4p0vdw7mi63kh8mffl74j0rc781p7";
 
   nativeBuildInputs = [ cmake ];
   buildInputs = [ llvm libxml2 ];
 
   outputs = [ "out" "dev" ];
-
-  enableParallelBuilding = true;
 
   postInstall = ''
     moveToOutput include "$dev"
@@ -26,8 +24,8 @@ stdenv.mkDerivation {
 
   meta = {
     description = "The LLVM Linker";
-    homepage    = http://lld.llvm.org/;
-    license     = stdenv.lib.licenses.ncsa;
-    platforms   = stdenv.lib.platforms.all;
+    homepage    = "https://lld.llvm.org/";
+    license     = lib.licenses.ncsa;
+    platforms   = lib.platforms.all;
   };
 }

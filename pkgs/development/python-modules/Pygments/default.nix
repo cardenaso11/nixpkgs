@@ -6,12 +6,11 @@
 
 buildPythonPackage rec {
   pname = "Pygments";
-  version = "2.2.0";
-  name = "${pname}-${version}";
+  version = "2.7.2";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "1k78qdvir1yb1c634nkv6rbga8wv4289xarghmsbbvzhvr311bnv";
+    sha256 = "381985fcc551eb9d37c52088a32914e00517e57f4a21609f48141ba08e193fa0";
   };
 
   propagatedBuildInputs = [ docutils ];
@@ -20,9 +19,9 @@ buildPythonPackage rec {
   doCheck = false;
 
   meta = {
-    homepage = http://pygments.org/;
+    homepage = "https://pygments.org/";
     description = "A generic syntax highlighter";
     license = lib.licenses.bsd2;
-    maintainers = with lib.maintainers; [ garbas ];
+    maintainers = with lib.maintainers; [ ];
   };
 }

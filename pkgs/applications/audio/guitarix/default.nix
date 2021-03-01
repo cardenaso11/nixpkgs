@@ -1,50 +1,104 @@
-{ stdenv, fetchurl, gettext, intltool, pkgconfig, python2
-, avahi, bluez, boost, eigen, fftw, glib, glib-networking
-, glibmm, gsettings-desktop-schemas, gtkmm2, libjack2
-, ladspaH, libav, librdf, libsndfile, lilv, lv2, serd, sord, sratom
-, wrapGAppsHook, zita-convolver, zita-resampler
+{ lib, stdenv
+, fetchurl
+, avahi
+, bluez
+, boost
+, curl
+, eigen
+, fftw
+, gettext
+, glib
+, glib-networking
+, glibmm
+, gnome3
+, gsettings-desktop-schemas
+, gtk3
+, gtkmm3
+, hicolor-icon-theme
+, intltool
+, ladspaH
+, libjack2
+, libsndfile
+, lilv
+, lrdf
+, lv2
+, pkg-config
+, python2
+, sassc
+, serd
+, sord
+, sratom
+, wafHook
+, wrapGAppsHook
+, zita-convolver
+, zita-resampler
 , optimizationSupport ? false # Enable support for native CPU extensions
 }:
 
 let
-  inherit (stdenv.lib) optional;
+  inherit (lib) optional;
 in
 
 stdenv.mkDerivation rec {
-  name = "guitarix-${version}";
-  version = "0.37.0";
+  pname = "guitarix";
+  version = "0.41.0";
 
   src = fetchurl {
     url = "mirror://sourceforge/guitarix/guitarix2-${version}.tar.xz";
-    sha256 = "17dsd32yd92l7xq1x0b8jsws5yif2pk4zbfjbc560hgarym6r8x6";
+    sha256 = "0qsfbyrrpb3bbdyq68k28mjql7kglxh8nqcw9jvja28x6x9ik5a0";
   };
 
-  nativeBuildInputs = [ gettext intltool wrapGAppsHook pkgconfig python2 ];
+  nativeBuildInputs = [
+    gettext
+    hicolor-icon-theme
+    intltool
+    pkg-config
+    python2
+    wafHook
+    wrapGAppsHook
+  ];
 
   buildInputs = [
-    avahi bluez boost eigen fftw glib glibmm glib-networking.out
-    gsettings-desktop-schemas gtkmm2 libjack2 ladspaH libav librdf
-    libsndfile lilv lv2 serd sord sratom zita-convolver
+    avahi
+    bluez
+    boost
+    curl
+    eigen
+    fftw
+    glib
+    glib-networking.out
+    glibmm
+    gnome3.adwaita-icon-theme
+    gsettings-desktop-schemas
+    gtk3
+    gtkmm3
+    ladspaH
+    libjack2
+    libsndfile
+    lilv
+    lrdf
+    lv2
+    sassc
+    serd
+    sord
+    sratom
+    zita-convolver
     zita-resampler
   ];
 
-  configureFlags = [
+  # this doesnt build, probably because we have the wrong faust version:
+  #       "--faust"
+  # aproved versions are 2.20.2 and 2.15.11
+  wafConfigureFlags = [
+    "--no-faust"
+    "--no-font-cache-update"
     "--shared-lib"
     "--no-desktop-update"
     "--enable-nls"
-    "--no-faust" # todo: find out why --faust doesn't work
     "--install-roboto-font"
-    "--includeresampler"
-    "--convolver-ffmpeg"
   ] ++ optional optimizationSupport "--optimization";
 
-  configurePhase = ''python2 waf configure --prefix=$out $configureFlags'';
-
-  buildPhase = ''python2 waf build'';
-
-  installPhase = ''python2 waf install'';
-
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A virtual guitar amplifier for Linux running with JACK";
     longDescription = ''
         guitarix is a virtual guitar amplifier for Linux running with
@@ -68,7 +122,7 @@ stdenv.mkDerivation rec {
       clean-sounds, nice overdrive, fat distortion and a diversity of
       crazy sounds never heard before.
     '';
-    homepage = http://guitarix.sourceforge.net/;
+    homepage = "http://guitarix.sourceforge.net/";
     license = licenses.gpl3Plus;
     maintainers = with maintainers; [ astsmtl goibhniu ];
     platforms = platforms.linux;

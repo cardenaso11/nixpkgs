@@ -1,51 +1,52 @@
-{ stdenv, fetchFromGitHub, makeWrapper, pythonPackages, perl, zip
-, rtmpdump, substituteAll }:
+{ lib, stdenv, fetchFromGitHub, makeWrapper, python3Packages, perl, zip
+, gitMinimal, ffmpeg }:
 
 let
-  inherit (pythonPackages) python nose pycrypto requests mock;
+
+  inherit (python3Packages)
+    python nose pycrypto pyyaml requests mock python-dateutil setuptools;
+
 in stdenv.mkDerivation rec {
-  name = "svtplay-dl-${version}";
-  version = "1.9.11";
+  pname = "svtplay-dl";
+  version = "3.0";
 
   src = fetchFromGitHub {
     owner = "spaam";
     repo = "svtplay-dl";
     rev = version;
-    sha256 = "14p2362rzyblma9321z4zrcbzfs9m269ry6sz44ly0bv5fik7gdy";
+    sha256 = "1k7829sgvs2ihnf8d3zrqk99ifm9867wcn6f8zg628h8aqsif4fc";
   };
 
-  pythonPaths = [ pycrypto requests ];
-  buildInputs = [ python perl nose mock rtmpdump makeWrapper ] ++ pythonPaths;
-  nativeBuildInputs = [ zip ];
+  pythonPaths = [ pycrypto pyyaml requests ];
+  buildInputs = [ python perl nose mock python-dateutil setuptools ] ++ pythonPaths;
+  nativeBuildInputs = [ gitMinimal zip makeWrapper ];
 
   postPatch = ''
-    substituteInPlace lib/svtplay_dl/fetcher/rtmp.py \
-      --replace '"rtmpdump"' '"${rtmpdump}/bin/rtmpdump"'
-
     substituteInPlace scripts/run-tests.sh \
       --replace 'PYTHONPATH=lib' 'PYTHONPATH=lib:$PYTHONPATH'
+
+    sed -i '/def test_sublang2\?(/ i\    @unittest.skip("accesses network")' \
+      lib/svtplay_dl/tests/test_postprocess.py
   '';
 
-  makeFlags = "PREFIX=$(out) SYSCONFDIR=$(out)/etc PYTHON=${python.interpreter}";
+  makeFlags = [ "PREFIX=$(out)" "SYSCONFDIR=$(out)/etc" "PYTHON=${python.interpreter}" ];
 
   postInstall = ''
     wrapProgram "$out/bin/svtplay-dl" \
+      --prefix PATH : "${ffmpeg}" \
       --prefix PYTHONPATH : "$PYTHONPATH"
   '';
 
   doCheck = true;
   checkPhase = ''
-    sed -i "/def test_parse_m3u8/i\\
-        @unittest.skip('requires internet')" lib/svtplay_dl/tests/hls.py
-
     sh scripts/run-tests.sh -2
   '';
 
-  meta = with stdenv.lib; {
-    homepage = https://github.com/spaam/svtplay-dl;
+  meta = with lib; {
+    homepage = "https://github.com/spaam/svtplay-dl";
     description = "Command-line tool to download videos from svtplay.se and other sites";
     license = licenses.mit;
-    platforms = stdenv.lib.platforms.linux;
+    platforms = lib.platforms.unix;
     maintainers = [ maintainers.rycee ];
   };
 }

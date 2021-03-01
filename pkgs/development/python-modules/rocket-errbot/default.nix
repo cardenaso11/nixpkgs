@@ -1,11 +1,11 @@
-{ lib, fetchurl, fetchpatch, buildPythonPackage }:
+{ lib, fetchPypi, fetchpatch, buildPythonPackage }:
 
 buildPythonPackage rec {
-  name = "rocket-errbot-${version}";
+  pname = "rocket-errbot";
   version = "1.2.5";
 
-  src = fetchurl {
-    url = "mirror://pypi/r/rocket-errbot/${name}.tar.gz";
+  src = fetchPypi {
+    inherit pname version;
     sha256 = "181y1wqjvlry5xdzbliajvrxvswzh3myh795jnj1pm92r5grqzda";
   };
 
@@ -16,7 +16,7 @@ buildPythonPackage rec {
   }) ];
 
   meta = {
-    homepage = https://github.com/errbotio/rocket;
+    homepage = "https://github.com/errbotio/rocket";
     description = "Modern, multi-threaded and extensible web server";
     license = lib.licenses.mit;
   };

@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, pkgconfig, libtool
+{ lib, stdenv, fetchurl, pkg-config, libtool
 , xlibsWrapper, xbitmaps, libXrender, libXmu, libXt
 , expat, libjpeg, libpng, libiconv
 , flex
@@ -8,11 +8,11 @@
 # refer to the gentoo package
 
 stdenv.mkDerivation rec {
-  name = "motif-${version}";
+  pname = "motif";
   version = "2.3.6";
 
   src = fetchurl {
-    url = "mirror://sourceforge/motif/${name}.tar.gz";
+    url = "mirror://sourceforge/motif/${pname}-${version}.tar.gz";
     sha256 = "1ksqbp0bzdw6wcrx8s4hj4ivvxmw54hz85l2xfigb87cxmmhx0gs";
   };
 
@@ -22,7 +22,7 @@ stdenv.mkDerivation rec {
     expat libjpeg libpng libiconv
   ];
 
-  nativeBuildInputs = [ pkgconfig flex ];
+  nativeBuildInputs = [ pkg-config flex ];
 
   propagatedBuildInputs = [ libXp libXau ];
 
@@ -32,7 +32,7 @@ stdenv.mkDerivation rec {
 
   prePatch = ''
     rm lib/Xm/Xm.h
-  '' + stdenv.lib.optionalString (!demoSupport) ''
+  '' + lib.optionalString (!demoSupport) ''
     sed '/^SUBDIRS =,^$/s/\<demos\>//' -i Makefile.{am,in}
   '';
 
@@ -41,8 +41,8 @@ stdenv.mkDerivation rec {
               ./Add-X.Org-to-bindings-file.patch
             ];
 
-  meta = with stdenv.lib; {
-    homepage = http://motif.ics.com;
+  meta = with lib; {
+    homepage = "https://motif.ics.com";
     description = "Unix standard widget-toolkit and window-manager";
     platforms = with platforms; linux ++ darwin;
     license = with licenses; [ lgpl21 ];

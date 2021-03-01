@@ -1,24 +1,24 @@
-{ stdenv, buildPythonPackage, fetchPypi, isPy3k
+{ lib, buildPythonPackage, fetchPypi, isPy3k, fetchpatch
 , cairocffi, cssselect2, defusedxml, pillow, tinycss2
-, pytestrunner, pytestcov, pytest-flake8, pytest-isort }:
+, pytest, pytestrunner, pytestcov, pytest-flake8, pytest-isort }:
 
 buildPythonPackage rec {
   pname = "CairoSVG";
-  version = "2.1.3";
+  version = "2.5.0";
 
   disabled = !isPy3k;
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "e512f555f576b6462b04b585c4ba4c09a43f3a8fec907b60ead21d7d00c550e9";
+    sha256 = "3fc50d10f0cbef53b3ee376a97a88d81bbd9e2f190f7e63de08431a1a08e9afa";
   };
 
   propagatedBuildInputs = [ cairocffi cssselect2 defusedxml pillow tinycss2 ];
 
-  checkInputs = [ pytestrunner pytestcov pytest-flake8 pytest-isort ];
+  checkInputs = [ pytest pytestrunner pytestcov pytest-flake8 pytest-isort ];
 
-  meta = with stdenv.lib; {
-    homepage = https://cairosvg.org;
+  meta = with lib; {
+    homepage = "https://cairosvg.org";
     license = licenses.lgpl3;
     description = "SVG converter based on Cairo";
   };

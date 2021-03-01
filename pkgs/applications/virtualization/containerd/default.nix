@@ -1,54 +1,56 @@
-{ stdenv, lib, fetchFromGitHub, removeReferencesTo
-, go, libapparmor, apparmor-parser, libseccomp, btrfs-progs }:
+{ lib
+, fetchFromGitHub
+, buildGoPackage
+, btrfs-progs
+, go-md2man
+, installShellFiles
+, util-linux
+, nixosTests
+}:
 
-with lib;
-
-stdenv.mkDerivation rec {
-  name = "containerd-${version}";
-  version = "1.1.0";
+buildGoPackage rec {
+  pname = "containerd";
+  version = "1.4.3";
 
   src = fetchFromGitHub {
     owner = "containerd";
     repo = "containerd";
     rev = "v${version}";
-    sha256 = "0nknqprmi04jfiivrk158jyddc95q4jggfsm7cg7rpvjamkzn6c8";
+    sha256 = "09xvhjg5f8h90w1y94kqqnqzhbhd62dcdd9wb9sdqakisjk6zrl0";
   };
 
-  hardeningDisable = [ "fortify" ];
+  goPackagePath = "github.com/containerd/containerd";
+  outputs = [ "out" "man" ];
 
-  buildInputs = [ removeReferencesTo go btrfs-progs ];
-  buildFlags = "VERSION=v${version}";
+  nativeBuildInputs = [ go-md2man installShellFiles util-linux ];
 
-  BUILDTAGS = []
-    ++ optional (btrfs-progs == null) "no_btrfs";
+  buildInputs = [ btrfs-progs ];
 
-  preConfigure = ''
-    # Extract the source
-    cd "$NIX_BUILD_TOP"
-    mkdir -p "go/src/github.com/containerd"
-    mv "$sourceRoot" "go/src/github.com/containerd/containerd"
-    export GOPATH=$NIX_BUILD_TOP/go:$GOPATH
-'';
+  buildFlags = [ "VERSION=v${version}" "REVISION=${src.rev}" ];
 
-  preBuild = ''
-    cd go/src/github.com/containerd/containerd
+  BUILDTAGS = [ ]
+    ++ lib.optional (btrfs-progs == null) "no_btrfs";
+
+  buildPhase = ''
+    cd go/src/${goPackagePath}
     patchShebangs .
+    make binaries man $buildFlags
   '';
 
   installPhase = ''
-    mkdir -p $out/bin
-    cp bin/* $out/bin
+    install -Dm555 bin/* -t $out/bin
+    installManPage man/*.[1-9]
+    installShellCompletion --bash contrib/autocomplete/ctr
+    installShellCompletion --zsh --name _ctr contrib/autocomplete/zsh_autocomplete
   '';
 
-  preFixup = ''
-    find $out -type f -exec remove-references-to -t ${go} '{}' +
-  '';
+  passthru.tests = { inherit (nixosTests) docker; };
 
-  meta = {
-    homepage = https://containerd.tools/;
+  meta = with lib; {
+    homepage = "https://containerd.io/";
     description = "A daemon to control runC";
     license = licenses.asl20;
-    maintainers = with maintainers; [ offline ];
+    maintainers = with maintainers; [ offline vdemeester ];
     platforms = platforms.linux;
   };
 }

@@ -1,32 +1,29 @@
-{ stdenv, fetchFromGitHub, ocaml, findlib, jbuilder
-, ppx_fields_conv, ppx_sexp_conv, ppx_deriving
-, base64, fieldslib, jsonm, logs, re, stringext, uri
+{ lib, fetchurl, buildDunePackage
+, ppx_fields_conv, ppx_sexp_conv, stdlib-shims
+, base64, fieldslib, jsonm, re, stringext, uri-sexp
 }:
 
-stdenv.mkDerivation rec {
-	version = "1.0.2";
-	name = "ocaml${ocaml.version}-cohttp-${version}";
+buildDunePackage rec {
+  pname = "cohttp";
+  version = "2.5.4";
 
-	src = fetchFromGitHub {
-		owner = "mirage";
-		repo = "ocaml-cohttp";
-		rev = "v${version}";
-		sha256 = "0zgn32axmjvkmbvyfkbjcqximzc4zcfxs118b98xyrqnvwb0k7ka";
-	};
+  useDune2 = true;
 
-	buildInputs = [ ocaml findlib jbuilder jsonm ppx_fields_conv ppx_sexp_conv ];
+  minimumOCamlVersion = "4.04.1";
 
-	propagatedBuildInputs = [ ppx_deriving base64 fieldslib re stringext uri ];
+  src = fetchurl {
+    url = "https://github.com/mirage/ocaml-cohttp/releases/download/v${version}/cohttp-v${version}.tbz";
+    sha256 = "1q04spmki5zis5p5m1vs77i3k7ijm134j62g61071vblwx25z17a";
+  };
 
-	buildPhase = "jbuilder build -p cohttp";
+  buildInputs = [ jsonm ppx_fields_conv ppx_sexp_conv ];
 
-	inherit (jbuilder) installPhase;
+  propagatedBuildInputs = [ base64 fieldslib re stringext uri-sexp stdlib-shims ];
 
-	meta = {
-		description = "HTTP(S) library for Lwt, Async and Mirage";
-		license = stdenv.lib.licenses.isc;
-		maintainers = [ stdenv.lib.maintainers.vbgl ];
-		inherit (src.meta) homepage;
-		inherit (ocaml.meta) platforms;
-	};
+  meta = {
+    description = "HTTP(S) library for Lwt, Async and Mirage";
+    license = lib.licenses.isc;
+    maintainers = [ lib.maintainers.vbgl ];
+    homepage = "https://github.com/mirage/ocaml-cohttp";
+  };
 }

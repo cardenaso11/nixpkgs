@@ -1,33 +1,47 @@
-{ stdenv, fetchFromGitHub, qtbase, qttools, qmake, libGLU_combined, openssl, zlib }:
+{ stdenv, lib, fetchFromGitHub
+, qtbase, qttools, qmake, wrapQtAppsHook
+}:
 
 stdenv.mkDerivation rec {
-  name = "librepcb-${version}";
-  version = "20171229";
+  pname = "librepcb";
+  version = "0.1.5";
 
   src = fetchFromGitHub {
-    owner = "LibrePCB";
-    repo = "LibrePCB";
+    owner  = pname;
+    repo   = pname;
+    rev    = version;
+    sha256 = "0ag8h3id2c1k9ds22rfrvyhf2vjhkv82xnrdrz4n1hnlr9566vcx";
     fetchSubmodules = true;
-    rev = "4efb06fa42755abc5e606da4669cc17e8de2f8c6";
-    sha256 = "0r33fm1djqpy0dzvnf5gv2dfh5nj2acaxb7w4cn8yxdgrazjf7ak";
   };
 
-  enableParallelBuilding = true;
-
-  nativeBuildInputs = [ qmake qttools ];
-
+  nativeBuildInputs = [ qmake qttools wrapQtAppsHook ];
   buildInputs = [ qtbase ];
 
-	# LibrePCB still supports QT below 5.9. But some code lines break the build, so they are removed by this patch so that the software builds.
-  patches = [ ./fix-2017-12.patch ];
-
   qmakeFlags = ["-r"];
+  enableParallelBuilding = true;
 
-  meta = with stdenv.lib; {
+  postInstall = ''
+    mkdir -p $out/share/librepcb/fontobene
+    cp share/librepcb/fontobene/newstroke.bene $out/share/librepcb/fontobene/
+  '';
+
+  # the build system tries to use 'git' at build time to find the HEAD hash.
+  # that's a no-no, so replace it with a quick hack. NOTE: the # adds a comment
+  # at the end of the line to remove the git call.
+  patchPhase = ''
+    substituteInPlace ./libs/librepcb/common/common.pro \
+      --replace 'GIT_COMMIT_SHA' 'GIT_COMMIT_SHA="\\\"${src.rev}\\\"" # '
+  '';
+
+  preFixup = ''
+    wrapQtApp $out/bin/librepcb
+  '';
+
+  meta = with lib; {
     description = "A free EDA software to develop printed circuit boards";
-    homepage = http://librepcb.org/;
-    maintainers = with maintainers; [ luz ];
-    license = licenses.gpl3;
-    platforms = platforms.linux;
+    homepage    = "https://librepcb.org/";
+    maintainers = with maintainers; [ luz thoughtpolice ];
+    license     = licenses.gpl3;
+    platforms   = platforms.linux;
   };
 }

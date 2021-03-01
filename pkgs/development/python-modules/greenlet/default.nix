@@ -8,12 +8,12 @@
 
 buildPythonPackage rec {
   pname = "greenlet";
-  version = "0.4.13";
+  version = "0.4.17";
   disabled = isPyPy;  # builtin for pypy
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "0fef83d43bf87a5196c91e73cb9772f945a4caaff91242766c5916d1dd1381e4";
+    sha256 = "0swdhrcq13bdszv3yz5645gi4ijbzmmhxpb6whcfg3d7d5f87n21";
   };
 
   propagatedBuildInputs = [ six ];
@@ -24,7 +24,7 @@ buildPythonPackage rec {
   '';
 
   meta = {
-    homepage = https://pypi.python.org/pypi/greenlet;
+    homepage = "https://pypi.python.org/pypi/greenlet";
     description = "Module for lightweight in-process concurrent programming";
     license = lib.licenses.lgpl2;
   };

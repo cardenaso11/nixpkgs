@@ -1,21 +1,67 @@
-{ stdenv, fetchurl, pkgconfig, gnome3, gtk3, wrapGAppsHook
-, glib, appstream-glib, gobjectIntrospection
-, webkitgtk, gettext, itstool, gsettings-desktop-schemas }:
+{ lib, stdenv
+, fetchurl
+, meson
+, ninja
+, pkg-config
+, gnome3
+, gtk3
+, wrapGAppsHook
+, glib
+, amtk
+, appstream-glib
+, gobject-introspection
+, python3
+, webkitgtk
+, gettext
+, itstool
+, gsettings-desktop-schemas
+, shared-mime-info
+}:
 
 stdenv.mkDerivation rec {
-  name = "devhelp-${version}";
-  version = "3.28.1";
+  pname = "devhelp";
+  version = "3.38.1";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/devhelp/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "08a8xizjqz68k30zd37r7g516azhan9bbrjsvv10hjd5dg3f476s";
+    url = "mirror://gnome/sources/devhelp/${lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "13sa25mmlc49kn520hdfbskma65y7smvwmyhfggj0n9s3fazba2d";
   };
 
-  nativeBuildInputs = [ pkgconfig gettext itstool wrapGAppsHook appstream-glib gobjectIntrospection ];
-  buildInputs = [
-    glib gtk3 webkitgtk
-    gnome3.defaultIconTheme gsettings-desktop-schemas
+  nativeBuildInputs = [
+    meson
+    ninja
+    pkg-config
+    gettext
+    itstool
+    wrapGAppsHook
+    appstream-glib
+    gobject-introspection
+    python3
   ];
+
+  buildInputs = [
+    glib
+    gtk3
+    webkitgtk
+    amtk
+    gnome3.adwaita-icon-theme
+    gsettings-desktop-schemas
+  ];
+
+  doCheck = true;
+
+  postPatch = ''
+    chmod +x meson_post_install.py # patchShebangs requires executable file
+    patchShebangs meson_post_install.py
+  '';
+
+  preFixup = ''
+    gappsWrapperArgs+=(
+      # Fix pages being blank
+      # https://gitlab.gnome.org/GNOME/devhelp/issues/14
+      --prefix XDG_DATA_DIRS : "${shared-mime-info}/share"
+    )
+  '';
 
   passthru = {
     updateScript = gnome3.updateScript {
@@ -24,11 +70,11 @@ stdenv.mkDerivation rec {
     };
   };
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "API documentation browser for GNOME";
-    homepage = https://wiki.gnome.org/Apps/Devhelp;
-    license = licenses.gpl2;
-    maintainers = gnome3.maintainers;
+    homepage = "https://wiki.gnome.org/Apps/Devhelp";
+    license = licenses.gpl3Plus;
+    maintainers = teams.gnome.members;
     platforms = platforms.linux;
   };
 }

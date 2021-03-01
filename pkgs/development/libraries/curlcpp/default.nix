@@ -1,24 +1,24 @@
-{ stdenv, fetchFromGitHub, cmake, curl }: 
+{ lib, stdenv, fetchFromGitHub, cmake, curl }:
 
 stdenv.mkDerivation rec {
-  name = "curlcpp-${version}";
-  version = "1.0";
+  pname = "curlcpp";
+  version = "1.4";
 
   src = fetchFromGitHub {
     owner = "JosephP91";
     repo = "curlcpp";
-    rev = "${version}";
-    sha256 = "1akibhrmqsy0dlz9lq93508bhkh7r1l0aycbzy2x45a9gqxfdi4q";
+    rev = version;
+    sha256 = "1zx76jcddqk4zkcdb6p7rsmkjbbjm2cj6drj0c8hdd61ms1d0f3n";
   };
 
-  buildInputs = [ cmake curl ];
+  nativeBuildInputs = [ cmake ];
+  buildInputs = [ curl ];
 
-  meta = with stdenv.lib; {
-    homepage = https://josephp91.github.io/curlcpp/;
+  meta = with lib; {
+    homepage = "https://josephp91.github.io/curlcpp/";
     description = "Object oriented C++ wrapper for CURL";
     platforms = platforms.unix;
     license = licenses.mit;
-    maintainers = with maintainers; [ juliendehos rszibele ];
+    maintainers = with maintainers; [ rszibele ];
   };
 }
-

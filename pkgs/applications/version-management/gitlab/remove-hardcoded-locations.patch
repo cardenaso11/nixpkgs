@@ -34,12 +34,12 @@ diff --git a/config/initializers/1_settings.rb b/config/initializers/1_settings.
 index 0bea8a4f4b..290248547b 100644
 --- a/config/initializers/1_settings.rb
 +++ b/config/initializers/1_settings.rb
-@@ -255,7 +255,7 @@ Settings.gitlab['user']       ||= 'git'
- Settings.gitlab['user_home']  ||= begin
+@@ -177,7 +177,7 @@ Settings.gitlab['ssh_user'] ||= Settings.gitlab['user']
+ Settings.gitlab['user_home'] ||= begin
    Etc.getpwnam(Settings.gitlab['user']).dir
- rescue ArgumentError # no user configured
--  '/home/' + Settings.gitlab['user']
-+  '/homeless-shelter'
+                                  rescue ArgumentError # no user configured
+-                                   '/home/' + Settings.gitlab['user']
++                                   '/homeless-shelter'
  end
  Settings.gitlab['time_zone'] ||= nil
  Settings.gitlab['signup_enabled'] ||= true if Settings.gitlab['signup_enabled'].nil?
@@ -150,3 +150,14 @@ index b276a81eac..070e3ebd81 100644
        end
      end
    end
+--- a/lib/gitlab/authorized_keys.rb
++++ b/lib/gitlab/authorized_keys.rb
+@@ -157,7 +157,7 @@
+         raise KeyError, "Invalid ID: #{id.inspect}"
+       end
+ 
+-      "#{File.join(Gitlab.config.gitlab_shell.path, 'bin', 'gitlab-shell')} #{id}"
++      "#{File.join('/run/current-system/sw/bin', 'gitlab-shell')} #{id}"
+     end
+ 
+     def strip(key)

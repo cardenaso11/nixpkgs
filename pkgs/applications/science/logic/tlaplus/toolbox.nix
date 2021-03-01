@@ -1,9 +1,9 @@
 { lib, fetchzip, makeWrapper, makeDesktopItem, stdenv
-, jre, swt, gtk, libXtst, glib
+, gtk, libXtst, glib, zlib
 }:
 
 let
-  version = "1.5.6";
+  version = "1.7.0";
   arch = "x86_64";
 
   desktopItem = makeDesktopItem rec {
@@ -13,7 +13,7 @@ let
     comment = "IDE for TLA+";
     desktopName = name;
     genericName = comment;
-    categories = "Application;Development";
+    categories = "Development";
     extraEntries = ''
       StartupWMClass=TLA+ Toolbox
     '';
@@ -21,30 +21,34 @@ let
 
 
 in stdenv.mkDerivation {
-  name = "tla-toolbox-${version}";
+  pname = "tla-toolbox";
+  inherit version;
   src = fetchzip {
     url = "https://tla.msr-inria.inria.fr/tlatoolbox/products/TLAToolbox-${version}-linux.gtk.${arch}.zip";
-    sha256 = "1h63mcbrkf4jcg6qncpqffdi0x665z0wlfdq43d67p411xcqmbw9";
+    sha256 = "0v15wscawair5bghr5ixb4i062kmh9by1m0hnz2r1sawlqyafz02";
   };
 
-  buildInputs = [ makeWrapper  ];
+  nativeBuildInputs = [ makeWrapper ];
 
   phases = [ "installPhase" ];
 
   installPhase = ''
     mkdir -p "$out/bin"
     cp -r "$src" "$out/toolbox"
-    chmod +w "$out/toolbox" "$out/toolbox/toolbox"
+    chmod -R +w "$out/toolbox"
 
     patchelf \
       --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
       "$out/toolbox/toolbox"
 
+    patchelf \
+      --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
+      "$(find "$out/toolbox" -name java)"
+
     makeWrapper $out/toolbox/toolbox $out/bin/tla-toolbox \
       --run "set -x; cd $out/toolbox" \
       --add-flags "-data ~/.tla-toolbox" \
-      --prefix PATH : "${jre}/bin" \
-      --prefix LD_LIBRARY_PATH : "${swt}/lib:${gtk}/lib:${libXtst}/lib:${glib}/lib"
+      --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ gtk libXtst glib zlib ]}"
 
     echo -e "\nCreating TLA Toolbox icons..."
     pushd "$src"
@@ -62,7 +66,7 @@ in stdenv.mkDerivation {
   '';
 
   meta = {
-    homepage = http://research.microsoft.com/en-us/um/people/lamport/tla/toolbox.html;
+    homepage = "http://research.microsoft.com/en-us/um/people/lamport/tla/toolbox.html";
     description = "IDE for the TLA+ tools";
     longDescription = ''
       Integrated development environment for the TLA+ tools, based on Eclipse. You can use it
@@ -71,7 +75,7 @@ in stdenv.mkDerivation {
     '';
     # http://lamport.azurewebsites.net/tla/license.html
     license = with lib.licenses; [ mit ];
-    platforms = stdenv.lib.platforms.linux;
-    maintainers = [ stdenv.lib.maintainers.badi ];
+    platforms = lib.platforms.linux;
+    maintainers = [ ];
   };
 }

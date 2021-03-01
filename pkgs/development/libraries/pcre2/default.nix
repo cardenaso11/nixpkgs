@@ -1,54 +1,29 @@
-{ stdenv, fetchurl, fetchpatch }:
+{ lib, stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "pcre2-${version}";
-  version = "10.23";
+  pname = "pcre2";
+  version = "10.36";
   src = fetchurl {
-    url = "ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/${name}.tar.bz2";
-    sha256 = "0vn5g0mkkp99mmzpissa06hpyj6pk9s4mlwbjqrjvw3ihy8rpiyz";
+    url = "https://ftp.pcre.org/pub/pcre/${pname}-${version}.tar.bz2";
+    sha256 = "0p3699msps07p40g9426lvxa3b41rg7k2fn7qxl2jm0kh4kkkvx9";
   };
 
   configureFlags = [
     "--enable-pcre2-16"
     "--enable-pcre2-32"
-    "--enable-jit"
-  ];
-
-  patches = [
-    (fetchpatch {
-      name = "CVE-2017-7186-part1.patch";
-      url = "https://vcs.pcre.org/pcre2/code/trunk/src/pcre2_ucd.c?view=patch&r1=316&r2=670&sortby=date";
-      sha256 = "10yzglvbn7h06hg7zffr5zh378i5jihvx7d5gggkynws79vgwvfr";
-      stripLen = 2;
-      extraPrefix = "";
-    })
-    (fetchpatch {
-      name = "CVE-2017-7186-part2.patch";
-      url = "https://vcs.pcre.org/pcre2/code/trunk/src/pcre2_internal.h?view=patch&r1=600&r2=670&sortby=date";
-      sha256 = "1bggk7vd5hg0bjg96lj4h1lacmr6grq68dm6iz1n7vg3zf7virjn";
-      stripLen = 2;
-      extraPrefix = "";
-    })
-    (fetchpatch {
-      name = "CVE-2017-8786.patch";
-      url = "https://vcs.pcre.org/pcre2/code/trunk/src/pcre2test.c?r1=692&r2=697&view=patch";
-      sha256 = "1c629nzrk4il2rfclwyc1a373q58m4q9ys9wr91zhl4skfk7x19b";
-      stripLen = 2;
-      extraPrefix = "";
-    })
-  ];
+  ] ++ lib.optional (!stdenv.hostPlatform.isRiscV) "--enable-jit";
 
   outputs = [ "bin" "dev" "out" "doc" "man" "devdoc" ];
 
-  doCheck = false; # fails 1 of 3 tests
+  doCheck = false; # fails 1 out of 3 tests, looks like a bug
 
   postFixup = ''
     moveToOutput bin/pcre2-config "$dev"
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Perl Compatible Regular Expressions";
-    homepage = http://www.pcre.org/;
+    homepage = "http://www.pcre.org/";
     license = licenses.bsd3;
     maintainers = with maintainers; [ ttuegel ];
     platforms = platforms.all;

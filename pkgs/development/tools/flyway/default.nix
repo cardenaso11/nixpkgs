@@ -1,26 +1,36 @@
-{ stdenv, fetchurl, jre_headless, makeWrapper }:
+{ lib, stdenv, fetchurl, jre_headless, makeWrapper }:
   let
-    version = "5.1.1";
+    version = "7.5.3";
   in
     stdenv.mkDerivation {
-      name = "flyway-${version}";
+      pname = "flyway";
+      inherit version;
       src = fetchurl {
-        url = "https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/5.1.1/flyway-commandline-${version}.tar.gz";
-        sha256 = "0kdi7m5rwlik0d2rn9s3siqmc83xfkhhsdxw3g7r1mvk2ivscb7f";
+        url = "https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/${version}/flyway-commandline-${version}.tar.gz";
+        sha256 = "sha256-XDfY/OnXSmgF2u8DMr+WgzNJD3VYw/hQ8v3cr4/jhVY=";
       };
-      buildInputs = [ makeWrapper ];
+      nativeBuildInputs = [ makeWrapper ];
       dontBuild = true;
       dontStrip = true;
       installPhase = ''
         mkdir -p $out/bin $out/share/flyway
-        cp -r sql jars lib drivers $out/share/flyway
+        cp -r sql jars drivers conf $out/share/flyway
+        install -Dt $out/share/flyway/lib lib/community/*.jar lib/*.jar
         makeWrapper "${jre_headless}/bin/java" $out/bin/flyway \
           --add-flags "-Djava.security.egd=file:/dev/../dev/urandom" \
-          --add-flags "-cp '$out/share/flyway/lib/*:$out/share/flyway/drivers/*'" \
-          --add-flags "org.flywaydb.commandline.Main"
+          --add-flags "-classpath '$out/share/flyway/lib/*:$out/share/flyway/drivers/*'" \
+          --add-flags "org.flywaydb.commandline.Main" \
+          --add-flags "-jarDirs='$out/share/flyway/jars'"
       '';
-      meta = with stdenv.lib; {
+      meta = with lib; {
         description = "Evolve your Database Schema easily and reliably across all your instances";
+        longDescription = ''
+          The Flyway command-line tool is a standalone Flyway distribution.
+          It is primarily meant for users who wish to migrate their database from the command-line
+          without having to integrate Flyway into their applications nor having to install a build tool.
+
+          This package is only the Community Edition of the Flyway command-line tool.
+        '';
         homepage = "https://flywaydb.org/";
         license = licenses.asl20;
         platforms = platforms.unix;

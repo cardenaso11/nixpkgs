@@ -1,29 +1,64 @@
-{ stdenv, fetchurl
-, openssl, qt5, libGLU_combined, zlib, pkgconfig, libav
+{ lib
+, mkDerivation
+, fetchurl
+, autoPatchelfHook
+, pkg-config
+, ffmpeg_3
+, openssl
+, qtbase
+, zlib
+
+, withJava ? true
+, jre_headless
 }:
 
-stdenv.mkDerivation rec {
-  name = "makemkv-${ver}";
-  ver = "1.12.2";
-  builder = ./builder.sh;
-
+let
+  version = "1.15.4";
+  # Using two URLs as the first one will break as soon as a new version is released
   src_bin = fetchurl {
-    url = "http://www.makemkv.com/download/makemkv-bin-${ver}.tar.gz";
-    sha256 = "0ylybq0776am5yy064b55q0jja1q1p9dscwmn7f1p3igzv15rypj";
+    urls = [
+      "http://www.makemkv.com/download/makemkv-bin-${version}.tar.gz"
+      "http://www.makemkv.com/download/old/makemkv-bin-${version}.tar.gz"
+    ];
+    hash = "sha256-Reun5hp7Rnsf6N5yL6iQ1Vbhnz/AKnt/jYRqyOK625o=";
   };
-
   src_oss = fetchurl {
-    url = "http://www.makemkv.com/download/makemkv-oss-${ver}.tar.gz";
-    sha256 = "063rgb88zbh4zwysyhjn4awykcnc90qgsx6d8ggm27wy849306v1";
+    urls = [
+      "http://www.makemkv.com/download/makemkv-oss-${version}.tar.gz"
+      "http://www.makemkv.com/download/old/makemkv-oss-${version}.tar.gz"
+    ];
+    hash = "sha256-gtBi1IRNF5ASk/ZdzkDmOuEIT9gazNaRNCftqbLEP+M=";
   };
+in mkDerivation {
+  pname = "makemkv";
+  inherit version;
 
-  nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [openssl qt5.qtbase libGLU_combined zlib libav];
+  srcs = [ src_bin src_oss ];
 
-  libPath = stdenv.lib.makeLibraryPath [stdenv.cc.cc openssl libGLU_combined qt5.qtbase zlib ]
-          + ":" + stdenv.cc.cc + "/lib64";
+  sourceRoot = "makemkv-oss-${version}";
 
-  meta = with stdenv.lib; {
+  nativeBuildInputs = [ autoPatchelfHook pkg-config ];
+
+  buildInputs = [ ffmpeg_3 openssl qtbase zlib ];
+
+  qtWrapperArgs =
+    let
+      binPath = lib.makeBinPath [ jre_headless ];
+    in lib.optionals withJava [
+      "--prefix PATH : ${binPath}"
+    ];
+
+  installPhase = ''
+    runHook preInstall
+
+    install -Dm555 -t $out/bin           out/makemkv ../makemkv-bin-${version}/bin/amd64/makemkvcon
+    install -D     -t $out/lib           out/lib{driveio,makemkv,mmbd}.so.*
+    install -D     -t $out/share/MakeMKV ../makemkv-bin-${version}/src/share/*
+
+    runHook postInstall
+  '';
+
+  meta = with lib; {
     description = "Convert blu-ray and dvd to mkv";
     longDescription = ''
       makemkv is a one-click QT application that transcodes an encrypted
@@ -35,7 +70,8 @@ stdenv.mkDerivation rec {
       expiration date.
     '';
     license = licenses.unfree;
-    homepage = http://makemkv.com;
-    maintainers = [ maintainers.titanous ];
+    homepage = "http://makemkv.com";
+    platforms = [ "x86_64-linux" ];
+    maintainers = with maintainers; [ danieldk titanous ];
   };
 }

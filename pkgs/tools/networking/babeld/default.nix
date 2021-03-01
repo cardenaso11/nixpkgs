@@ -1,22 +1,25 @@
-{ stdenv, fetchurl }:
+{ lib, stdenv, fetchurl, nixosTests }:
 
 stdenv.mkDerivation rec {
-  name = "babeld-1.8.2";
+  pname = "babeld";
+  version = "1.9.2";
 
   src = fetchurl {
-    url = "http://www.pps.univ-paris-diderot.fr/~jch/software/files/${name}.tar.gz";
-    sha256 = "1p751zb7h75f8w7jz37432dj610f432jnj37lxhmav9q6aqyrv87";
+    url = "http://www.pps.univ-paris-diderot.fr/~jch/software/files/${pname}-${version}.tar.gz";
+    sha256 = "01vzhrspnm4sy9ggaz9n3bfl5hy3qlynr218j3mdcddzm3h00kqm";
   };
 
   preBuild = ''
     makeFlags="PREFIX=$out ETCDIR=$out/etc"
   '';
 
+  passthru.tests.babeld = nixosTests.babeld;
+
   meta = {
-    homepage = http://www.pps.univ-paris-diderot.fr/~jch/software/babel/;
+    homepage = "http://www.pps.univ-paris-diderot.fr/~jch/software/babel/";
     description = "Loop-avoiding distance-vector routing protocol";
-    license = stdenv.lib.licenses.mit;
-    maintainers = with stdenv.lib.maintainers; [ fuuzetsu fpletz ];
-    platforms = with stdenv.lib.platforms; linux;
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [ fpletz ];
+    platforms = with lib.platforms; linux;
   };
 }

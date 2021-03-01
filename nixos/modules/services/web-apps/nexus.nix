@@ -68,6 +68,7 @@ in
           -Dkaraf.data=${cfg.home}/nexus3
           -Djava.io.tmpdir=${cfg.home}/nexus3/tmp
           -Dkaraf.startLocalConsole=false
+          -Djava.endorsed.dirs=${cfg.package}/lib/endorsed
         '';
 
         description = ''
@@ -80,12 +81,14 @@ in
   };
 
   config = mkIf cfg.enable {
-    users.extraUsers."${cfg.user}" = {
+    users.users.${cfg.user} = {
       isSystemUser = true;
       group = cfg.group;
+      home = cfg.home;
+      createHome = true;
     };
 
-    users.extraGroups."${cfg.group}" = {};
+    users.groups.${cfg.group} = {};
 
     systemd.services.nexus = {
       description = "Sonatype Nexus3";
@@ -103,8 +106,6 @@ in
 
       preStart = ''
         mkdir -p ${cfg.home}/nexus3/etc
-
-        chown -R ${cfg.user}:${cfg.group} ${cfg.home}
 
         if [ ! -f ${cfg.home}/nexus3/etc/nexus.properties ]; then
           echo "# Jetty section" > ${cfg.home}/nexus3/etc/nexus.properties
@@ -124,11 +125,10 @@ in
         User = cfg.user;
         Group = cfg.group;
         PrivateTmp = true;
-        PermissionsStartOnly = true;
         LimitNOFILE = 102642;
       };
     };
   };
 
-  meta.maintainers = with stdenv.lib.maintainers; [ ironpinguin ];
+  meta.maintainers = with lib.maintainers; [ ironpinguin ];
 }

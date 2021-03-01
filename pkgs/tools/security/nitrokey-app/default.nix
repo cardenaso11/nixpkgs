@@ -1,38 +1,42 @@
-{ stdenv, bash-completion, cmake, fetchgit, hidapi, libusb1, pkgconfig, qt5 }:
+{ lib, stdenv, bash-completion, cmake, fetchFromGitHub, hidapi, libusb1, pkg-config
+, qtbase, qttranslations, qtsvg, wrapQtAppsHook }:
 
 stdenv.mkDerivation rec {
-  name = "nitrokey-app-${version}";
-  version = "1.2";
+  pname = "nitrokey-app";
+  version = "1.4.2";
 
-  # We use fetchgit instead of fetchFromGitHub because of necessary git submodules
-  src = fetchgit {
-    url = "https://github.com/Nitrokey/nitrokey-app.git";
+  src = fetchFromGitHub {
+    owner = "Nitrokey";
+    repo = "nitrokey-app";
     rev = "v${version}";
-    sha256 = "0mm6vlgxlmpahmmcn4awnfpx5rx5bj8m44cywhgxlmz012x73hzi";
+    sha256 = "1k0w921hfrya4q2r7bqn7kgmwvwb7c15k9ymlbnksmfc9yyjyfcv";
+    fetchSubmodules = true;
   };
 
   buildInputs = [
     bash-completion
     hidapi
     libusb1
-    qt5.qtbase
-    qt5.qttranslations
+    qtbase
+    qttranslations
+    qtsvg
   ];
   nativeBuildInputs = [
     cmake
-    pkgconfig
+    pkg-config
+    wrapQtAppsHook
   ];
-  cmakeFlags = "-DCMAKE_BUILD_TYPE=Release";
+  cmakeFlags = [ "-DCMAKE_BUILD_TYPE=Release" ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description      = "Provides extra functionality for the Nitrokey Pro and Storage";
     longDescription  = ''
        The nitrokey-app provides a QT system tray widget with wich you can
        access the extra functionality of a Nitrokey Storage or Nitrokey Pro.
        See https://www.nitrokey.com/ for more information.
     '';
-    homepage         = https://github.com/Nitrokey/nitrokey-app;
-    repositories.git = https://github.com/Nitrokey/nitrokey-app.git;
+    homepage         = "https://github.com/Nitrokey/nitrokey-app";
+    repositories.git = "https://github.com/Nitrokey/nitrokey-app.git";
     license          = licenses.gpl3;
     maintainers      = with maintainers; [ kaiha fpletz ];
   };

@@ -1,7 +1,7 @@
-{ stdenv, fetchFromGitHub, fetchurl }:
+{ lib, stdenv, fetchFromGitHub, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "libcli-${version}";
+  pname = "libcli";
   version = "1.9.7";
 
   src = fetchFromGitHub {
@@ -22,9 +22,9 @@ stdenv.mkDerivation rec {
 
   makeFlags = [ "PREFIX=$(out)" ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Emulate a Cisco-style telnet command-line interface";
-    homepage = http://sites.dparrish.com/libcli;
+    homepage = "http://sites.dparrish.com/libcli";
     license = licenses.lgpl21Plus;
     platforms = platforms.linux;
   };

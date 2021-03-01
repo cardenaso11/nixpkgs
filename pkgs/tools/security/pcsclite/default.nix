@@ -1,13 +1,15 @@
-{ stdenv, fetchurl, pkgconfig, udev, dbus_libs, perl, python2
+{ lib, stdenv, fetchurl, pkg-config, udev, dbus, perl, python3
 , IOKit ? null }:
 
 stdenv.mkDerivation rec {
-  name = "pcsclite-${version}";
-  version = "1.8.23";
+  pname = "pcsclite";
+  version = "1.9.1";
+
+  outputs = [ "bin" "out" "dev" "doc" "man" ];
 
   src = fetchurl {
     url = "https://pcsclite.apdu.fr/files/pcsc-lite-${version}.tar.bz2";
-    sha256 = "1jc9ws5ra6v3plwraqixin0w0wfxj64drahrbkyrrwzghqjjc9ss";
+    sha256 = "sha256-c8R4m3h2qDOnD0k82iFlXf6FaJ2bfilwHCQyduVeaDo=";
   };
 
   patches = [ ./no-dropdir-literals.patch ];
@@ -16,10 +18,9 @@ stdenv.mkDerivation rec {
     # The OS should care on preparing the drivers into this location
     "--enable-usbdropdir=/var/lib/pcsc/drivers"
     "--enable-confdir=/etc"
-    "--enable-ipcdir=/run/pcscd"
-  ] ++ stdenv.lib.optional stdenv.isLinux
+  ] ++ lib.optional stdenv.isLinux
          "--with-systemdsystemunitdir=\${out}/etc/systemd/system"
-    ++ stdenv.lib.optional (!stdenv.isLinux)
+    ++ lib.optional (!stdenv.isLinux)
          "--disable-libsystemd";
 
   postConfigure = ''
@@ -28,15 +29,19 @@ stdenv.mkDerivation rec {
     }' config.h
   '';
 
-  nativeBuildInputs = [ pkgconfig perl python2 ];
-  buildInputs = stdenv.lib.optionals stdenv.isLinux [ udev dbus_libs ]
-             ++ stdenv.lib.optionals stdenv.isDarwin [ IOKit ];
+  postInstall = ''
+    # pcsc-spy is a debugging utility and it drags python into the closure
+    moveToOutput bin/pcsc-spy "$dev"
+  '';
 
-  meta = with stdenv.lib; {
+  nativeBuildInputs = [ pkg-config perl ];
+  buildInputs = [ python3 ] ++ lib.optionals stdenv.isLinux [ udev dbus ]
+             ++ lib.optionals stdenv.isDarwin [ IOKit ];
+
+  meta = with lib; {
     description = "Middleware to access a smart card using SCard API (PC/SC)";
-    homepage = https://pcsclite.apdu.fr/;
+    homepage = "https://pcsclite.apdu.fr/";
     license = licenses.bsd3;
-    maintainers = with maintainers; [ viric wkennington ];
     platforms = with platforms; unix;
   };
 }

@@ -1,21 +1,23 @@
-{ stdenv, fetchFromGitHub, bash, makeWrapper, git, mysql, diffutils, which, coreutils, procps, nettools
+{ lib, stdenv, fetchFromGitHub, bash, makeWrapper, git, mysql, diffutils, which, coreutils, procps, nettools
 ,supportOpenstack ? true
 }:
 
-with stdenv.lib;
+with lib;
 
 stdenv.mkDerivation rec {
-  name = "snabb-${version}";
-  version = "2018.01.2";
+  pname = "snabb";
+  version = "2019.11";
 
   src = fetchFromGitHub {
     owner = "snabbco";
     repo = "snabb";
     rev = "v${version}";
-    sha256 = "0n6bjf5g4imy0aql8fa55c0db3w8h944ia1dk10167x5pqvkgdgm";
+    sha256 = "1sas9d9kk92mc2wrwgmm0xxz7ycmh388dwvyxf1hy183yvin1nac";
   };
 
-  buildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ makeWrapper ];
+
+  NIX_CFLAGS_COMPILE = [ "-Wno-error=stringop-truncation" ];
 
   patchPhase = ''
     patchShebangs .
@@ -44,7 +46,7 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = false;
 
   meta =  {
-    homepage = https://github.com/SnabbCo/snabbswitch;
+    homepage = "https://github.com/SnabbCo/snabbswitch";
     description = "Simple and fast packet networking toolkit";
     longDescription = ''
       Snabb Switch is a LuaJIT-based toolkit for writing high-speed

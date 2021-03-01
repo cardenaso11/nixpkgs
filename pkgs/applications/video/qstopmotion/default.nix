@@ -1,23 +1,71 @@
-{ stdenv, fetchurl, qt5, ffmpeg, guvcview, automoc4
-, cmake, ninja, libxml2, gettext, pkgconfig, libgphoto2, gphoto2, v4l_utils
-, libv4l, pcre }:
+{ lib, stdenv
+, mkDerivation
+, fetchurl
+, qtbase
+, qtmultimedia
+, qtquickcontrols
+, qtimageformats
+, qtxmlpatterns
+, ffmpeg_3
+, guvcview
+, cmake
+, ninja
+, libxml2
+, gettext
+, pkg-config
+, libgphoto2
+, gphoto2
+, v4l-utils
+, libv4l
+, pcre
+, qwt
+, extra-cmake-modules
+}:
 
-stdenv.mkDerivation rec {
+mkDerivation rec {
   pname = "qstopmotion";
-  version = "2.3.2";
-  name = "${pname}-${version}";
+  version = "2.4.1";
 
   src = fetchurl {
-    url = "mirror://sourceforge/project/${pname}/Version_2_3_2/${name}-Source.tar.gz";
-    sha256 = "1vbiznwyc05jqg0dpmgxmvf7kdzmlck0i8v2c5d69kgrdnaypcrf";
+    url = "mirror://sourceforge/project/${pname}/Version_${builtins.replaceStrings ["."] ["_"] version}/${pname}-${version}-Source.tar.gz";
+    sha256 = "03r6jxyq0bak2vsy2b78nk27m7fm96hnl8cx11l3l17704j4iglh";
   };
 
-  buildInputs = [ qt5.qtbase ffmpeg guvcview v4l_utils libv4l pcre ];
+  buildInputs = [
+    qtbase
+    qtmultimedia
+    qtquickcontrols
+    qtimageformats
+    qtxmlpatterns
+    v4l-utils
+    libv4l
+    pcre
+    ffmpeg_3
+    guvcview
+    qwt
+  ];
 
-  nativeBuildInputs = [ pkgconfig cmake ninja gettext libgphoto2 gphoto2 libxml2 libv4l ];
+  nativeBuildInputs = [
+    pkg-config
+    cmake
+    extra-cmake-modules
+    ninja
+    gettext
+    libgphoto2
+    gphoto2
+    libxml2
+    libv4l
+  ];
 
-  meta = with stdenv.lib; {
-    homepage = http://www.qstopmotion.org;
+  patchPhase = ''
+    substituteInPlace CMakeLists.txt \
+      --replace "find_package(Qt5 REQUIRED COMPONENTS Core Widgets Xml" \
+                "find_package(Qt5 REQUIRED COMPONENTS Core Widgets Xml Multimedia"
+    grep -rl 'qwt' . | xargs sed -i 's@<qwt/qwt_slider.h>@<qwt_slider.h>@g'
+  '';
+
+  meta = with lib; {
+    homepage = "http://www.qstopmotion.org";
     description = "Create stopmotion animation with a (web)camera";
     longDescription = ''
       Qstopmotion is a tool to create stopmotion
@@ -26,8 +74,9 @@ stdenv.mkDerivation rec {
       animation to different video formats such as mpeg or avi.
     '';
 
-    license = stdenv.lib.licenses.gpl2Plus;
+    license = lib.licenses.gpl2Plus;
     maintainers = [ maintainers.leenaars ];
-    platforms = stdenv.lib.platforms.gnu ++ stdenv.lib.platforms.linux;
+    broken = stdenv.isAarch64;
+    platforms = lib.platforms.gnu ++ lib.platforms.linux;
   };
 }

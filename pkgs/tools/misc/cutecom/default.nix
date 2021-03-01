@@ -1,25 +1,29 @@
-{ stdenv, fetchFromGitHub, qtbase, qtserialport, cmake }:
+{ mkDerivation, lib, fetchFromGitLab, qtbase, qtserialport, cmake }:
 
-stdenv.mkDerivation rec {
-  name = "cutecom-${version}";
-  version = "0.45.0";
-  src = fetchFromGitHub {
-    owner = "neundorf";
-    repo = "CuteCom";
-    rev = "v${version}";
-    sha256 = "07h1r7bcz86fvcvxq6g5zyh7fsginx27jbp81a7hjhhhn6v0dsmh";
+mkDerivation rec {
+  pname = "cutecom";
+  version = "0.51.0+patch";
+
+  src = fetchFromGitLab {
+    owner = "cutecom";
+    repo = "cutecom";
+    rev = "70d0c497acf8f298374052b2956bcf142ed5f6ca";
+    sha256 = "X8jeESt+x5PxK3rTNC1h1Tpvue2WH09QRnG2g1eMoEE=";
   };
 
   preConfigure = ''
-    substituteInPlace CMakeLists.txt --replace "#find_package(Serialport REQUIRED)" "find_package(Qt5SerialPort REQUIRED)"
+    substituteInPlace CMakeLists.txt \
+      --replace "#find_package(Serialport REQUIRED)" "find_package(Qt5SerialPort REQUIRED)"
   '';
-  buildInputs = [qtbase qtserialport cmake];
 
-  meta = {
+  buildInputs = [ qtbase qtserialport ];
+  nativeBuildInputs = [ cmake ];
+
+  meta = with lib; {
     description = "A graphical serial terminal";
-    homepage = http://cutecom.sourceforge.net/;
-    license = stdenv.lib.licenses.gpl2Plus;
-    maintainers = [ stdenv.lib.maintainers.bennofs ];
-    platforms = stdenv.lib.platforms.linux;
+    homepage = "https://gitlab.com/cutecom/cutecom/";
+    license = licenses.gpl3;
+    maintainers = with maintainers; [ bennofs ];
+    platforms = platforms.linux;
   };
 }

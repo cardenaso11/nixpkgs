@@ -8,7 +8,6 @@
 buildPythonPackage rec {
   pname = "nose_warnings_filters";
   version = "0.1.5";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -19,13 +18,14 @@ buildPythonPackage rec {
 
   propagatedBuildInputs = [ nose ];
 
+  checkInputs = [ nose ];
   checkPhase = ''
     nosetests -v
   '';
 
   meta = {
     description = "Allow injecting warning filters during nosetest";
-    homepage = https://github.com/Carreau/nose_warnings_filters;
+    homepage = "https://github.com/Carreau/nose_warnings_filters";
     license = lib.licenses.mit;
   };
 }

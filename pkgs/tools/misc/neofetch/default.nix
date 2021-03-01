@@ -1,26 +1,30 @@
-{ stdenv, fetchFromGitHub, fetchpatch }:
+{ lib, stdenvNoCC, fetchFromGitHub, bash }:
 
-stdenv.mkDerivation rec {
-  name = "neofetch-${version}";
-  version = "4.0.2";
+stdenvNoCC.mkDerivation rec {
+  pname = "neofetch";
+  version = "7.1.0";
+
   src = fetchFromGitHub {
     owner = "dylanaraps";
     repo = "neofetch";
     rev = version;
-    sha256 = "0c0x05ca8lp74928nix4pvd243l95lav35r21mpkbagf72z284d2";
+    sha256 = "0i7wpisipwzk0j62pzaigbiq42y1mn4sbraz4my2jlz6ahwf00kv";
   };
 
-  dontBuild = true;
-
+  strictDeps = true;
+  buildInputs = [ bash ];
+  postPatch = ''
+    patchShebangs --host neofetch
+  '';
 
   makeFlags = [
-    "PREFIX=$(out)"
-    "SYSCONFDIR=$(out)/etc"
+    "PREFIX=${placeholder "out"}"
+    "SYSCONFDIR=${placeholder "out"}/etc"
   ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A fast, highly customizable system info script";
-    homepage = https://github.com/dylanaraps/neofetch;
+    homepage = "https://github.com/dylanaraps/neofetch";
     license = licenses.mit;
     platforms = platforms.all;
     maintainers = with maintainers; [ alibabzo konimex ];

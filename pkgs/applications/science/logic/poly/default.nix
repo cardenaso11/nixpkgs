@@ -1,20 +1,23 @@
-{stdenv, fetchurl, gmp, cmake, python}:
+{lib, stdenv, fetchFromGitHub, gmp, cmake, python}:
 
-let version = "0.1.4";
-in
+stdenv.mkDerivation rec {
+  pname = "libpoly";
+  version = "0.1.8";
 
-stdenv.mkDerivation {
-  name = "libpoly-${version}";
-
-  src = fetchurl {
-    url = "https://github.com/SRI-CSL/libpoly/archive/v${version}.tar.gz";
-    sha256 = "16x1pk2a3pcb5a0dzyw28ccjwkhmbsck4hy80ss7kx0dd7qgpi7j";
+  src = fetchFromGitHub {
+    owner = "SRI-CSL";
+    repo = "libpoly";
+    # they've pushed to the release branch, use explicit tag
+    rev = "refs/tags/v${version}";
+    sha256 = "1n3gijksnl2ybznq4lkwm2428f82423sxq18gnb2g1kiwqlzdaa3";
   };
 
-  buildInputs = [ cmake gmp python ];
+  nativeBuildInputs = [ cmake ];
 
-  meta = with stdenv.lib; {
-    homepage = https://github.com/SRI-CSL/libpoly;
+  buildInputs = [ gmp python ];
+
+  meta = with lib; {
+    homepage = "https://github.com/SRI-CSL/libpoly";
     description = "C library for manipulating polynomials";
     license = licenses.lgpl3;
     platforms = platforms.all;

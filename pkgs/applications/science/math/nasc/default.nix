@@ -1,61 +1,87 @@
-{ stdenv
-, bash
-, gnused
+{ lib, stdenv
 , fetchFromGitHub
-, gettext
-, pkgconfig
-, gtk3
-, granite
-, gnome3
-, cmake
+, pkg-config
+, fetchpatch
+, python3
+, meson
 , ninja
 , vala
+, gtk3
+, glib
+, pantheon
+, gtksourceview
+, libgee
+, nix-update-script
+, webkitgtk
 , libqalculate
-, elementary-cmake-modules
-, wrapGAppsHook }:
+, intltool
+, gnuplot
+, wrapGAppsHook
+}:
 
 stdenv.mkDerivation rec {
-  name = "nasc-${version}";
-  version = "0.4.6";
+  pname = "nasc";
+  version = "0.7.5";
 
   src = fetchFromGitHub {
     owner = "parnold-x";
-    repo = "nasc";
+    repo = pname;
     rev = version;
-    sha256 = "01n4ldj5phrsv97vb04qvs9c1ip6v8wygx9llj704hly1il9fb54";
+    sha256 = "kSRc5RLkI6SBJirUYw6swZi8IJhaL3y74b2Zw8kh2XA=";
+    fetchSubmodules = true;
   };
 
-  XDG_DATA_DIRS = stdenv.lib.concatStringsSep ":" [
-    "${granite}/share"
-    "${gnome3.libgee}/share"
+  patches = [
+    # fix compilation with gcc10
+    (fetchpatch {
+      url = "https://github.com/parnold-x/libqalculate/commit/4fa8f2cceada128ef19f82407226b2c230b780d5.patch";
+      extraPrefix = "subprojects/libqalculate/";
+      stripLen = "1";
+      sha256 = "0kbff623zl0s6yx5avx068f2apwzxzvihjahja4qhlkqkhhzj9dm";
+    })
   ];
 
   nativeBuildInputs = [
-    pkgconfig
-    wrapGAppsHook
+    glib # post_install.py
+    gtk3 # post_install.py
+    intltool # for libqalculate
+    meson
+    ninja
+    pkg-config
+    python3
     vala
-    cmake
-    gettext
-  ];
-  buildInputs = [
-    libqalculate
-    gtk3
-    granite
-    gnome3.libgee
-    gnome3.libsoup
-    gnome3.gtksourceview
+    wrapGAppsHook
   ];
 
-  prePatch = ''
-    substituteInPlace ./libqalculatenasc/libtool \
-      --replace "/bin/bash" "${bash}/bin/bash" \
-      --replace "/bin/sed" "${gnused}/bin/sed"
-    substituteInPlace ./libqalculatenasc/configure.inc \
-      --replace 'ac_default_path="/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin"' 'ac_default_path=$PATH'
+  buildInputs = [
+    glib
+    gtk3
+    gtksourceview
+    libgee
+    pantheon.elementary-icon-theme
+    pantheon.granite
+    webkitgtk
+    # We add libqalculate's runtime dependencies because nasc has it as a modified subproject.
+  ] ++ libqalculate.buildInputs ++ libqalculate.propagatedBuildInputs;
+
+  postPatch = ''
+    chmod +x meson/post_install.py
+    patchShebangs meson/post_install.py
+
+    # patch subproject. same code in libqalculate expression
+    substituteInPlace subprojects/libqalculate/libqalculate/Calculator-plot.cc \
+      --replace 'commandline = "gnuplot"' 'commandline = "${gnuplot}/bin/gnuplot"' \
+      --replace '"gnuplot - ' '"${gnuplot}/bin/gnuplot - '
   '';
 
-  meta = with stdenv.lib; {
-    description = "Do maths like a normal person";
+  passthru = {
+    updateScript = nix-update-script {
+      attrPath = pname;
+    };
+  };
+
+  meta = with lib; {
+    description = "Do maths like a normal person, designed for elementary OS";
     longDescription = ''
       It’s an app where you do maths like a normal person. It lets you
       type whatever you want and smartly figures out what is math and
@@ -63,8 +89,8 @@ stdenv.mkDerivation rec {
       answers in to future equations and if that answer changes, so does
       the equations it’s used in.
     '';
-    homepage = https://github.com/parnold-x/nasc;
-    maintainers = with maintainers; [ samdroid-apps ];
+    homepage = "https://github.com/parnold-x/nasc";
+    maintainers = pantheon.maintainers;
     platforms = platforms.linux;
     license = licenses.gpl3Plus;
   };

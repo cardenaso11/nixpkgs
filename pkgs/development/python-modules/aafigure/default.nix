@@ -1,9 +1,8 @@
-{ stdenv, buildPythonPackage, fetchPypi, pillow }:
+{ lib, buildPythonPackage, fetchPypi, pillow }:
 
 buildPythonPackage rec {
   pname = "aafigure";
   version = "0.6";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -22,11 +21,11 @@ buildPythonPackage rec {
     sed -i "s|/usr/share/fonts|/nonexisting-fonts-path|" aafigure/PILhelper.py
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "ASCII art to image converter";
-    homepage = https://launchpad.net/aafigure/;
+    homepage = "https://launchpad.net/aafigure/";
     license = licenses.bsd2;
     maintainers = with maintainers; [ bjornfor ];
-    platforms = platforms.linux;
+    platforms = platforms.unix;
   };
 }

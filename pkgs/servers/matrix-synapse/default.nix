@@ -1,64 +1,82 @@
-{ lib, pkgs, stdenv, pythonPackages, fetchurl, fetchFromGitHub, fetchpatch }:
+{ lib, stdenv, python3, openssl
+, enableSystemd ? stdenv.isLinux, nixosTests
+, enableRedis ? false
+, callPackage
+}:
+
+with python3.pkgs;
+
 let
-  matrix-angular-sdk = pythonPackages.buildPythonPackage rec {
-    name = "matrix-angular-sdk-${version}";
-    version = "0.6.8";
+  plugins = python3.pkgs.callPackage ./plugins { };
+  tools = callPackage ./tools { };
+in
+buildPythonApplication rec {
+  pname = "matrix-synapse";
+  version = "1.27.0";
 
-    src = fetchurl {
-      url = "mirror://pypi/m/matrix-angular-sdk/matrix-angular-sdk-${version}.tar.gz";
-      sha256 = "0gmx4y5kqqphnq3m7xk2vpzb0w2a4palicw7wfdr1q2schl9fhz2";
-    };
-  };
-  matrix-synapse-ldap3 = pythonPackages.buildPythonPackage rec {
-    pname = "matrix-synapse-ldap3";
-    version = "0.1.3";
-
-    src = fetchFromGitHub {
-      owner = "matrix-org";
-      repo = "matrix-synapse-ldap3";
-      rev = "v${version}";
-      sha256 = "0ss7ld3bpmqm8wcs64q1kb7vxlpmwk9lsgq0mh21a9izyfc7jb2l";
-    };
-
-    propagatedBuildInputs = with pythonPackages; [ service-identity ldap3 twisted ];
-
-    checkInputs = with pythonPackages; [ ldaptor mock ];
-  };
-in pythonPackages.buildPythonApplication rec {
-  name = "matrix-synapse-${version}";
-  version = "0.31.2";
-
-  src = fetchFromGitHub {
-    owner = "matrix-org";
-    repo = "synapse";
-    rev = "v${version}";
-    sha256 = "15nfdq5s0d4bv1in6vymhq70hpz48p0nlzx25wxpibbrix630h8q";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "1kpkxgyzz35ga4ld7cbjr0pfbhrcbrfmp9msnwjqllmsmy0g5bas";
   };
 
   patches = [
-    ./matrix-synapse.patch
+    # adds an entry point for the service
+    ./homeserver-script.patch
   ];
 
-  propagatedBuildInputs = with pythonPackages; [
-    blist canonicaljson daemonize dateutil frozendict pillow pyasn1
-    pydenticon pymacaroons-pynacl pynacl pyopenssl pysaml2 pytz requests
-    signedjson systemd twisted ujson unpaddedbase64 pyyaml prometheus_client
-    matrix-angular-sdk bleach netaddr jinja2 psycopg2
-    psutil msgpack-python lxml matrix-synapse-ldap3
-    phonenumbers jsonschema affinity bcrypt
-  ];
+  propagatedBuildInputs = [
+    setuptools
+    bcrypt
+    bleach
+    canonicaljson
+    daemonize
+    frozendict
+    jinja2
+    jsonschema
+    lxml
+    msgpack
+    netaddr
+    phonenumbers
+    pillow
+    prometheus_client
+    psutil
+    psycopg2
+    pyasn1
+    pymacaroons
+    pynacl
+    pyopenssl
+    pysaml2
+    pyyaml
+    requests
+    signedjson
+    sortedcontainers
+    treq
+    twisted
+    unpaddedbase64
+    typing-extensions
+    authlib
+    pyjwt
+  ] ++ lib.optional enableSystemd systemd
+    ++ lib.optional enableRedis hiredis;
 
-  # Checks fail because of Tox.
-  doCheck = false;
+  checkInputs = [ mock parameterized openssl ];
 
-  buildInputs = with pythonPackages; [
-    mock setuptoolsTrial
-  ];
+  doCheck = !stdenv.isDarwin;
 
-  meta = with stdenv.lib; {
-    homepage = https://matrix.org;
+  checkPhase = ''
+    ${lib.optionalString (!enableRedis) "rm -r tests/replication # these tests need the optional dependency 'hiredis'"}
+    PYTHONPATH=".:$PYTHONPATH" ${python3.interpreter} -m twisted.trial tests
+  '';
+
+  passthru.tests = { inherit (nixosTests) matrix-synapse; };
+  passthru.plugins = plugins;
+  passthru.tools = tools;
+  passthru.python = python3;
+
+  meta = with lib; {
+    homepage = "https://matrix.org";
     description = "Matrix reference homeserver";
     license = licenses.asl20;
-    maintainers = [ maintainers.ralith maintainers.roblabla ];
+    maintainers = teams.matrix.members;
   };
 }

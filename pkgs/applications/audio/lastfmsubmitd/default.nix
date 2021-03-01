@@ -1,8 +1,7 @@
-{ stdenv, fetchurl, pythonPackages }:
+{ lib, fetchurl, pythonPackages }:
 
 pythonPackages.buildPythonApplication rec {
-  name = "lastfmsubmitd-${version}";
-  namePrefix = ""; 
+  pname = "lastfmsubmitd";
   version = "1.0.6";
 
   src = fetchurl {
@@ -15,7 +14,8 @@ pythonPackages.buildPythonApplication rec {
   installCommand = "python setup.py install --prefix=$out";
 
   meta = {
-    homepage = https://www.red-bean.com/decklin/lastfmsubmitd/;
+    homepage = "https://www.red-bean.com/decklin/lastfmsubmitd/";
+    license = lib.licenses.mit;
     description = "An last.fm audio scrobbler and daemon";
   };
 }

@@ -1,38 +1,78 @@
-{ stdenv, fetchFromGitHub, gnugrep
+{ lib, stdenv, fetchFromGitHub, cmake, bash, gnugrep
 , fixDarwinDylibNames
-, legacySupport ? false }:
+, file
+, legacySupport ? false
+, static ? stdenv.hostPlatform.isStatic
+}:
 
 stdenv.mkDerivation rec {
-  name = "zstd-${version}";
-  version = "1.3.4";
+  pname = "zstd";
+  version = "1.4.8";
 
   src = fetchFromGitHub {
-    sha256 = "090ba7dnv5z2v4vlb8b275b0n7cqsdzjqvr3b6a0w65z13mgy2nw";
-    rev = "v${version}";
-    repo = "zstd";
     owner = "facebook";
+    repo = "zstd";
+    rev = "v${version}";
+    sha256 = "018zgigp5xlrb4mgshgrvns0cfbhhcg89cifbjj4rv6s3n9riphw";
   };
 
-  buildInputs = stdenv.lib.optional stdenv.isDarwin fixDarwinDylibNames;
+  nativeBuildInputs = [ cmake ]
+   ++ lib.optional stdenv.isDarwin fixDarwinDylibNames;
+  buildInputs = lib.optional stdenv.hostPlatform.isUnix bash;
 
-  makeFlags = [
-    "ZSTD_LEGACY_SUPPORT=${if legacySupport then "1" else "0"}"
-  ];
+  patches = [
+    ./playtests-darwin.patch
+  ] # This I didn't upstream because if you use posix threads with MinGW it will
+    # work fine, and I'm not sure how to write the condition.
+    ++ lib.optional stdenv.hostPlatform.isWindows ./mcfgthreads-no-pthread.patch;
 
-  installFlags = [
-    "PREFIX=$(out)"
-  ];
-
-  preInstall = ''
-    substituteInPlace programs/zstdgrep \
-      --replace "=grep" "=${gnugrep}/bin/grep" \
-      --replace "=zstdcat" "=$out/bin/zstdcat"
-
-    substituteInPlace programs/zstdless \
-      --replace "zstdcat" "$out/bin/zstdcat"
+  postPatch = lib.optionalString (!static) ''
+    substituteInPlace build/cmake/CMakeLists.txt \
+      --replace 'message(SEND_ERROR "You need to build static library to build tests")' ""
+    substituteInPlace build/cmake/tests/CMakeLists.txt \
+      --replace 'libzstd_static' 'libzstd_shared'
+    sed -i \
+      "1aexport ${lib.optionalString stdenv.isDarwin "DY"}LD_LIBRARY_PATH=$PWD/build_/lib" \
+      tests/playTests.sh
   '';
 
-  meta = with stdenv.lib; {
+  cmakeFlags = [
+    "-DZSTD_BUILD_SHARED:BOOL=${if (!static) then "ON" else "OFF"}"
+    "-DZSTD_BUILD_STATIC:BOOL=${if static then "ON" else "OFF"}"
+    "-DZSTD_PROGRAMS_LINK_SHARED:BOOL=${if (!static) then "ON" else "OFF"}"
+    "-DZSTD_LEGACY_SUPPORT:BOOL=${if legacySupport then "ON" else "OFF"}"
+    "-DZSTD_BUILD_TESTS:BOOL=ON"
+  ];
+  cmakeDir = "../build/cmake";
+  dontUseCmakeBuildDir = true;
+  preConfigure = ''
+    mkdir -p build_ && cd $_
+  '';
+
+  checkInputs = [ file ];
+  doCheck = true;
+  checkPhase = ''
+    runHook preCheck
+    # Patch shebangs for playTests
+    patchShebangs ../programs/zstdgrep
+    ctest -R playTests # The only relatively fast test.
+    runHook postCheck
+  '';
+
+  preInstall = ''
+    substituteInPlace ../programs/zstdgrep \
+      --replace ":-grep" ":-${gnugrep}/bin/grep" \
+      --replace ":-zstdcat" ":-$bin/bin/zstdcat"
+
+    substituteInPlace ../programs/zstdless \
+      --replace "zstdcat" "$bin/bin/zstdcat"
+  '';
+
+  outputs = [ "bin" "dev" ]
+    ++ lib.optional stdenv.hostPlatform.isUnix "man"
+    ++ [ "out" ];
+
+  meta = with lib; {
     description = "Zstandard real-time compression algorithm";
     longDescription = ''
       Zstd, short for Zstandard, is a fast lossless compression algorithm,
@@ -43,11 +83,11 @@ stdenv.mkDerivation rec {
       speed is preserved and remain roughly the same at all settings, a
       property shared by most LZ compression algorithms, such as zlib.
     '';
-    homepage = https://facebook.github.io/zstd/;
-    # The licence of the CLI programme is GPLv2+, that of the library BSD-2.
-    license = with licenses; [ gpl2Plus bsd2 ];
+    homepage = "https://facebook.github.io/zstd/";
+    changelog = "https://github.com/facebook/zstd/blob/v${version}/CHANGELOG";
+    license = with licenses; [ bsd3 ]; # Or, at your opinion, GPL-2.0-only.
 
-    platforms = platforms.unix;
+    platforms = platforms.all;
     maintainers = with maintainers; [ orivej ];
   };
 }

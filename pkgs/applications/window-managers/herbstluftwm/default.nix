@@ -1,28 +1,91 @@
-{ stdenv, fetchurl, pkgconfig, glib, libX11, libXext, libXinerama }:
+{ lib, stdenv, fetchurl, cmake, pkg-config, python3, libX11, libXext, libXinerama, libXrandr, libXft, freetype, asciidoc-full
+, xdotool, xorgserver, xsetroot, xterm, runtimeShell
+, nixosTests }:
 
 stdenv.mkDerivation rec {
-  name = "herbstluftwm-0.7.0";
+  pname = "herbstluftwm";
+  version = "0.9.2";
 
   src = fetchurl {
-    url = "http://herbstluftwm.org/tarballs/${name}.tar.gz";
-    sha256 = "09xfs213vg1dpird61wik5bqb9yf8kh63ssy18ihf54inwqgqbvy";
+    url = "https://herbstluftwm.org/tarballs/herbstluftwm-${version}.tar.gz";
+    sha256 = "0avfhr68f6fjnafjdcyxcx7dkg38f2nadmhpj971qyqzfq2f6i38";
   };
 
-  patchPhase = ''
-    substituteInPlace config.mk \
-      --replace "/usr/local" "$out" \
-      --replace "/etc" "$out/etc" \
-      --replace "/zsh/functions/Completion/X" "/zsh/site-functions"
+  outputs = [
+    "out"
+    "doc"
+    "man"
+  ];
+
+  cmakeFlags = [
+    "-DCMAKE_INSTALL_SYSCONF_PREFIX=${placeholder "out"}/etc"
+  ];
+
+  nativeBuildInputs = [
+    cmake
+    pkg-config
+  ];
+
+  depsBuildBuild = [
+    asciidoc-full
+  ];
+
+  buildInputs = [
+    libX11
+    libXext
+    libXinerama
+    libXrandr
+    libXft
+    freetype
+  ];
+
+  patches = [
+    ./test-path-environment.patch
+  ];
+
+  postPatch = ''
+    patchShebangs doc/gendoc.py
+
+    # fix /etc/xdg/herbstluftwm paths in documentation and scripts
+    grep -rlZ /etc/xdg/herbstluftwm share/ doc/ scripts/ | while IFS="" read -r -d "" path; do
+      substituteInPlace "$path" --replace /etc/xdg/herbstluftwm $out/etc/xdg/herbstluftwm
+    done
+
+    # fix shebang in generated scripts
+    substituteInPlace tests/conftest.py --replace "/usr/bin/env bash" ${runtimeShell}
+    substituteInPlace tests/test_herbstluftwm.py --replace "/usr/bin/env bash" ${runtimeShell}
   '';
 
-  nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ glib libX11 libXext libXinerama ];
+  doCheck = true;
 
-  meta = {
+  checkInputs = [
+    (python3.withPackages (ps: with ps; [ ewmh pytest xlib ]))
+    xdotool
+    xorgserver
+    xsetroot
+    xterm
+    python3.pkgs.pytestCheckHook
+  ];
+
+  # make the package's module avalaible
+  preCheck = ''
+    export PYTHONPATH="$PYTHONPATH:../python"
+  '';
+
+  pytestFlagsArray = [ "../tests" ];
+  disabledTests = [
+    "test_title_different_letters_are_drawn"
+  ];
+
+  passthru = {
+    tests.herbstluftwm = nixosTests.herbstluftwm;
+  };
+
+  meta = with lib; {
     description = "A manual tiling window manager for X";
-    homepage = http://herbstluftwm.org/;
-    license = stdenv.lib.licenses.bsd2;
-    platforms = stdenv.lib.platforms.linux;
-    maintainers = with stdenv.lib.maintainers; [ the-kenny ];
+    homepage = "https://herbstluftwm.org/";
+    license = licenses.bsd2;
+    platforms = platforms.linux;
+    maintainers = with maintainers; [ thibautmarty ];
   };
 }

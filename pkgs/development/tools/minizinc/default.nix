@@ -1,23 +1,23 @@
-{ stdenv, fetchFromGitHub, cmake, flex, bison }:
+{ lib, stdenv, fetchFromGitHub, cmake, flex, bison }:
 let
-  version = "2.1.7";
+  version = "2.5.3";
 in
 stdenv.mkDerivation {
-  name = "minizinc-${version}";
+  pname = "minizinc";
+  inherit version;
 
-  buildInputs = [ cmake flex bison ];
+  nativeBuildInputs = [ cmake flex bison ];
 
   src = fetchFromGitHub {
-    rev = "${version}";
     owner = "MiniZinc";
     repo = "libminizinc";
-    sha256 = "05rifsgzfaalv5ymv59sjcvhr6i1byzbmq5p36hj3hpi5f929kip";
+    rev = version;
+    sha256 = "1kc65sxkc64pr560qaaznc44jnlvq7pbpzwijad410lpcnna5byg";
   };
 
-  # meta is all the information about the package..
-  meta = with stdenv.lib; {
-    homepage = http://www.minizinc.org/;
-    description = "MiniZinc is a medium-level constraint modelling language.";
+  meta = with lib; {
+    homepage = "https://www.minizinc.org/";
+    description = "A medium-level constraint modelling language";
 
     longDescription = ''
       MiniZinc is a medium-level constraint modelling
@@ -28,8 +28,7 @@ stdenv.mkDerivation {
     '';
 
     license = licenses.mpl20;
-    platforms = platforms.linux;
+    platforms = platforms.unix;
     maintainers = [ maintainers.sheenobu ];
   };
 }
-

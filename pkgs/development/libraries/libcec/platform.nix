@@ -1,9 +1,10 @@
-{ stdenv, fetchurl, cmake }:
+{ lib, stdenv, fetchurl, cmake }:
 
 let version = "2.1.0.1"; in
 
 stdenv.mkDerivation {
-  name = "p8-platform-${version}";
+  pname = "p8-platform";
+  inherit version;
 
   src = fetchurl {
     url = "https://github.com/Pulse-Eight/platform/archive/p8-platform-${version}.tar.gz";
@@ -12,11 +13,11 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ cmake ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Platform library for libcec and Kodi addons";
-    homepage = https://github.com/Pulse-Eight/platform;
+    homepage = "https://github.com/Pulse-Eight/platform";
     repositories.git = "https://github.com/Pulse-Eight/platform.git";
-    license = stdenv.lib.licenses.gpl2Plus;
+    license = lib.licenses.gpl2Plus;
     platforms = platforms.linux;
     maintainers = [ maintainers.titanous ];
   };

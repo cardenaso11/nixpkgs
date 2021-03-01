@@ -1,49 +1,104 @@
-{ stdenv, fetchurl, libgtop, libwnck3, glib, vala, pkgconfig
-, libstartup_notification, gobjectIntrospection, gtk-doc
-, python27, pythonPackages, libxml2 }:
+{ lib, stdenv
+, pantheon
+, autoconf
+, automake
+, libtool
+, gnome3
+, which
+, fetchgit
+, libgtop
+, libwnck3
+, glib
+, vala
+, pkg-config
+, libstartup_notification
+, gobject-introspection
+, gtk-doc
+, docbook_xsl
+, xorgserver
+, dbus
+, python3
+, wrapGAppsHook
+}:
 
 stdenv.mkDerivation rec {
   pname = "bamf";
-  version = "0.5.3";
-  name = "${pname}-${version}";
+  version = "0.5.4";
 
-  src = fetchurl {
-    url = "https://launchpad.net/${pname}/0.5/${version}/+download/${name}.tar.gz";
-    sha256 = "051vib8ndp09ph5bfwkgmzda94varzjafwxf6lqx7z1s8rd7n39l";
+  outputs = [ "out" "dev" "devdoc" ];
+
+  src = fetchgit {
+    url = "https://git.launchpad.net/~unity-team/bamf";
+    rev = version;
+    sha256 = "1klvij1wyhdj5d8sr3b16pfixc1yk8ihglpjykg7zrr1f50jfgsz";
   };
 
   nativeBuildInputs = [
-    pkgconfig
+    (python3.withPackages (ps: with ps; [ lxml ])) # Tests
+    autoconf
+    automake
+    dbus
+    docbook_xsl
+    gnome3.gnome-common
+    gobject-introspection
     gtk-doc
-    gobjectIntrospection
+    libtool
+    pkg-config
+    vala
+    which
+    wrapGAppsHook
+    xorgserver
   ];
 
-  buildInputs = [ libgtop libwnck3 vala libstartup_notification
-                  python27 pythonPackages.libxslt libxml2 glib ];
+  buildInputs = [
+    glib
+    libgtop
+    libstartup_notification
+    libwnck3
+  ];
 
+  patches = [
+    # Port tests and checks to python3 lxml.
+    ./gtester2xunit-python3.patch
+  ];
+
+  # Fix hard-coded path
+  # https://bugs.launchpad.net/bamf/+bug/1780557
   postPatch = ''
-    substituteInPlace data/Makefile.in \
-      --replace '/usr/lib/systemd/user' '@datarootdir@/systemd/user'
+    substituteInPlace data/Makefile.am \
+      --replace '/usr/lib/systemd/user' '@prefix@/lib/systemd/user'
   '';
+
+  configureFlags = [
+    "--enable-gtk-doc"
+    "--enable-headless-tests"
+  ];
 
   # fix paths
   makeFlags = [
-    "INTROSPECTION_GIRDIR=$(out)/share/gir-1.0/"
-    "INTROSPECTION_TYPELIBDIR=$(out)/lib/girepository-1.0"
+    "INTROSPECTION_GIRDIR=${placeholder "dev"}/share/gir-1.0/"
+    "INTROSPECTION_TYPELIBDIR=${placeholder "out"}/lib/girepository-1.0"
   ];
 
-  # ignore deprecation errors
-  NIX_CFLAGS_COMPILE = "-Wno-deprecated-declarations";
+  preConfigure = ''
+    ./autogen.sh
+  '';
 
-  meta = with stdenv.lib; {
+  # TODO: Requires /etc/machine-id
+  doCheck = false;
+
+  # glib-2.62 deprecations
+  NIX_CFLAGS_COMPILE = "-DGLIB_DISABLE_DEPRECATION_WARNINGS";
+
+  meta = with lib; {
     description = "Application matching framework";
     longDescription = ''
       Removes the headache of applications matching
       into a simple DBus daemon and c wrapper library.
     '';
-    homepage = https://launchpad.net/bamf;
+    homepage = "https://launchpad.net/bamf";
     license = licenses.lgpl3;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ davidak ];
+    maintainers = with maintainers; [ davidak ] ++ pantheon.maintainers;
   };
 }

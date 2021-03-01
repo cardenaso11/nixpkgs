@@ -1,23 +1,25 @@
-{ stdenv, lib, makeDesktopItem, fetchurl, unzip
-, gdk_pixbuf, glib, gtk2, atk, pango, cairo, freetype, fontconfig, dbus, nss, nspr, alsaLib, cups, expat, udev, gnome2
-, xorg, mozjpeg
+{ lib, stdenv, makeDesktopItem, fetchurl, unzip
+, gdk-pixbuf, glib, gtk3, atk, at-spi2-atk, pango, cairo, freetype, fontconfig, dbus, nss, nspr, alsaLib, cups, expat, udev, gnome3
+, xorg, mozjpeg, makeWrapper, wrapGAppsHook, libuuid, at-spi2-core, libdrm, mesa
 }:
 
 stdenv.mkDerivation rec {
-  name = "avocode-${version}";
-  version = "3.0.0";
+  pname = "avocode";
+  version = "4.12.0";
 
   src = fetchurl {
     url = "https://media.avocode.com/download/avocode-app/${version}/avocode-${version}-linux.zip";
-    sha256 = "1lm0zzqhnk5gm68l8fkmlkh3gl71f1xw0amy23460a7hm9wcwjr7";
+    sha256 = "sha256-qbG0Ii3Xmj1UGGS+n+LdiNPAHBkpQZMGEzrDvOcaUNA=";
   };
 
-  libPath = stdenv.lib.makeLibraryPath (with xorg; with gnome2; [
+  libPath = lib.makeLibraryPath (with xorg; [
     stdenv.cc.cc.lib
-    gdk_pixbuf
+    at-spi2-core.out
+    gdk-pixbuf
     glib
-    gtk2
+    gtk3
     atk
+    at-spi2-atk
     pango
     cairo
     freetype
@@ -29,7 +31,6 @@ stdenv.mkDerivation rec {
     cups
     expat
     udev
-    GConf
     libX11
     libxcb
     libXi
@@ -42,6 +43,9 @@ stdenv.mkDerivation rec {
     libXrender
     libXtst
     libXScrnSaver
+    libuuid
+    libdrm
+    mesa
   ]);
 
   desktopItem = makeDesktopItem {
@@ -50,11 +54,12 @@ stdenv.mkDerivation rec {
     icon = "avocode";
     desktopName = "Avocode";
     genericName = "Design Inspector";
-    categories = "Application;Development;";
+    categories = "Development;";
     comment = "The bridge between designers and developers";
   };
 
-  buildInputs = [ unzip ];
+  nativeBuildInputs = [makeWrapper wrapGAppsHook];
+  buildInputs = [ unzip gtk3 gnome3.adwaita-icon-theme ];
 
   # src is producing multiple folder on unzip so we must
   # override unpackCmd to extract it into newly created folder
@@ -83,14 +88,14 @@ stdenv.mkDerivation rec {
   postFixup = ''
     patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" $out/avocode
     for file in $(find $out -type f \( -perm /0111 -o -name \*.so\* \) ); do
-      patchelf --set-rpath ${libPath}:$out/ $file
+      patchelf --set-rpath ${libPath}:$out/ $file || true
     done
   '';
 
   enableParallelBuilding = true;
 
-  meta = with stdenv.lib; {
-    homepage = https://avocode.com/;
+  meta = with lib; {
+    homepage = "https://avocode.com/";
     description = "The bridge between designers and developers";
     license = licenses.unfree;
     platforms = platforms.linux;

@@ -1,65 +1,32 @@
-{ stdenv, fetchurl, fetchFromGitHub, python2
-, windowsSupport ? false
-}:
+{ python3Packages, fetchurl, fetchFromGitHub }:
 
-let
-  oldJinja = python2.override {
-    packageOverrides = self: super: {
-      jinja2 = super.jinja2.overridePythonAttrs (oldAttrs: rec {
-        version = "2.8.1";
-        src = oldAttrs.src.override {
-          inherit version;
-          sha256 = "14aqmhkc9rw5w0v311jhixdm6ym8vsm29dhyxyrjfqxljwx1yd1m";
-        };
-        doCheck = false;
-      });
-    };
-  };
+rec {
+  ansible = ansible_2_10;
 
-  generic = { version, sha256, py ? python2 }: py.pkgs.buildPythonPackage rec {
+  # The python module stays at v2.9.x until the related package set has caught up. Therefore v2.10 gets an override
+  # for now.
+  ansible_2_10 = python3Packages.toPythonApplication (python3Packages.ansible.overridePythonAttrs (old: rec {
     pname = "ansible";
-    inherit version;
+    version = "2.10.0";
+
+    # TODO: migrate to fetchurl, when release becomes available on releases.ansible.com
+    src = fetchFromGitHub {
+      owner = pname;
+      repo = pname;
+      rev = "v${version}";
+      sha256 = "0k9rs5ajx0chaq0xr1cj4x7fr5n8kd4y856miss6k01iv2m7yx42";
+    };
+  }));
+
+  ansible_2_9 = python3Packages.toPythonApplication python3Packages.ansible;
+
+  ansible_2_8 = python3Packages.toPythonApplication (python3Packages.ansible.overridePythonAttrs (old: rec {
+    pname = "ansible";
+    version = "2.8.14";
 
     src = fetchurl {
-      url = "http://releases.ansible.com/ansible/${pname}-${version}.tar.gz";
-      inherit sha256;
+      url = "https://releases.ansible.com/ansible/${pname}-${version}.tar.gz";
+      sha256 = "19ga0c9qs2b216qjg5k2yknz8ksjn8qskicqspg2d4b8x2nr1294";
     };
-
-    prePatch = ''
-      sed -i "s,/usr/,$out," lib/ansible/constants.py
-    '';
-
-    doCheck = false;
-    dontStrip = true;
-    dontPatchELF = true;
-    dontPatchShebangs = false;
-
-    propagatedBuildInputs = with py.pkgs; [
-      pycrypto paramiko jinja2 pyyaml httplib2 boto six netaddr dnspython
-    ] ++ stdenv.lib.optional windowsSupport pywinrm;
-
-    meta = with stdenv.lib; {
-      homepage = http://www.ansible.com;
-      description = "A simple automation tool";
-      license = with licenses; [ gpl3 ] ;
-      maintainers = with maintainers; [ jgeerds joamaki ];
-      platforms = with platforms; linux ++ darwin;
-    };
-  };
-
-in rec {
-  # We will carry all the supported versions
-
-  ansible_2_4 = generic {
-    version = "2.4.4.0";
-    sha256  = "0n1k6h0h6av74nw8vq98fmh6q4pq6brpwmx45282vh3bkdmpa0ib";
-  };
-
-  ansible_2_5 = generic {
-    version = "2.5.2";
-    sha256  = "1r9sq30xz3jrvx6yqssj5wmkml1f75rx1amd7g89f3ryngrq6m59";
-  };
-
-  ansible2 = ansible_2_5;
-  ansible  = ansible2;
+  }));
 }

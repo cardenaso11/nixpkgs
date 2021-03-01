@@ -8,7 +8,6 @@
 buildPythonPackage rec {
   pname = "ipython_genutils";
   version = "0.2.0";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -23,7 +22,7 @@ buildPythonPackage rec {
 
   meta = {
     description = "Vestigial utilities from IPython";
-    homepage = http://ipython.org/;
+    homepage = "http://ipython.org/";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ fridh ];
   };

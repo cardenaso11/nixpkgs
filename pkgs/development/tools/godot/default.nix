@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchFromGitHub, scons, pkgconfig, libX11, libXcursor
+{ stdenv, lib, fetchFromGitHub, scons, pkg-config, libX11, libXcursor
 , libXinerama, libXrandr, libXrender, libpulseaudio ? null
 , libXi ? null, libXext, libXfixes, freetype, openssl
 , alsaLib, libGLU, zlib, yasm ? null }:
@@ -9,17 +9,17 @@ let
     pulseaudio = false;
   };
 in stdenv.mkDerivation rec {
-  name    = "godot-${version}";
-  version = "3.0.3";
+  pname = "godot";
+  version = "3.2.3";
 
   src = fetchFromGitHub {
     owner  = "godotengine";
     repo   = "godot";
     rev    = "${version}-stable";
-    sha256 = "060jb5jip1si32a0sm1mmkvy3nldl1cjb82kjh5wihzllph93sxd";
+    sha256 = "19vrp5lhyvxbm6wjxzn28sn3i0s8j08ca7nani8l1nrhvlc8wi0v";
   };
 
-  nativeBuildInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkg-config ];
   buildInputs = [
     scons libX11 libXcursor libXinerama libXrandr libXrender
     libXi libXext libXfixes freetype openssl alsaLib libpulseaudio
@@ -33,10 +33,9 @@ in stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  buildPhase = ''
-    scons target=release_debug platform=x11 prefix=$out -j $NIX_BUILD_CORES \
-      ${lib.concatStringsSep " "
-          (lib.mapAttrsToList (k: v: "${k}=${builtins.toJSON v}") options)}
+  sconsFlags = "target=release_debug platform=x11";
+  preConfigure = ''
+    sconsFlags+=" ${lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "${k}=${builtins.toJSON v}") options)}"
   '';
 
   outputs = [ "out" "dev" "man" ];
@@ -52,18 +51,18 @@ in stdenv.mkDerivation rec {
     cp misc/dist/linux/godot.6 "$man/share/man/man6/"
 
     mkdir -p "$out"/share/{applications,icons/hicolor/scalable/apps}
-    cp misc/dist/linux/godot.desktop "$out/share/applications/"
+    cp misc/dist/linux/org.godotengine.Godot.desktop "$out/share/applications/"
     cp icon.svg "$out/share/icons/hicolor/scalable/apps/godot.svg"
     cp icon.png "$out/share/icons/godot.png"
-    substituteInPlace "$out/share/applications/godot.desktop" \
+    substituteInPlace "$out/share/applications/org.godotengine.Godot.desktop" \
       --replace "Exec=godot" "Exec=$out/bin/godot"
   '';
 
   meta = {
     homepage    = "https://godotengine.org";
     description = "Free and Open Source 2D and 3D game engine";
-    license     = stdenv.lib.licenses.mit;
+    license     = lib.licenses.mit;
     platforms   = [ "i686-linux" "x86_64-linux" ];
-    maintainers = [ stdenv.lib.maintainers.twey ];
+    maintainers = [ lib.maintainers.twey ];
   };
 }

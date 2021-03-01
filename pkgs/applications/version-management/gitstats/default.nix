@@ -1,14 +1,14 @@
-{ stdenv, fetchzip, perl, python, gnuplot, coreutils, gnugrep }:
+{ lib, stdenv, fetchzip, perl, python, gnuplot, coreutils, gnugrep }:
 
 stdenv.mkDerivation rec {
-  name = "gitstats-${version}";
+  pname = "gitstats";
   version = "2016-01-08";
 
   # upstream does not make releases
   src = fetchzip {
     url = "https://github.com/hoxu/gitstats/archive/55c5c285558c410bb35ebf421245d320ab9ee9fa.zip";
     sha256 = "1bfcwhksylrpm88vyp33qjby4js31zcxy7w368dzjv4il3fh2i59";
-    name = name + "-src";
+    name = "${pname}-${version}" + "-src";
   };
 
   buildInputs = [ perl python ];
@@ -29,8 +29,8 @@ stdenv.mkDerivation rec {
     install -Dm644 doc/gitstats.1 "$out"/share/man/man1/gitstats.1
   '';
 
-  meta = with stdenv.lib; {
-    homepage = http://gitstats.sourceforge.net/;
+  meta = with lib; {
+    homepage = "http://gitstats.sourceforge.net/";
     description = "Git history statistics generator";
     license = licenses.gpl2Plus;
     platforms = platforms.all;

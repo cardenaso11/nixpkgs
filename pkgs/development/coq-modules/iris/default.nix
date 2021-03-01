@@ -1,30 +1,19 @@
-{ stdenv, fetchzip, coq, ssreflect, stdpp }:
+{ lib, mkCoqDerivation, coq, stdpp, version ? null }:
 
-stdenv.mkDerivation rec {
-  version = "3.1.0";
-  name = "coq${coq.coq-version}-iris-${version}";
-  src = fetchzip {
-    url = "https://gitlab.mpi-sws.org/FP/iris-coq/-/archive/iris-${version}/iris-coq-iris-${version}.tar.gz";
-    sha256 = "0ipdb061jj205avxifshxkpyxxqykigmlxk2n5nvxj62gs3rl5j1";
-  };
+with lib; mkCoqDerivation rec {
+  pname = "iris";
+  domain = "gitlab.mpi-sws.org";
+  owner = "iris";
+  inherit version;
+  defaultVersion = if versions.range "8.9" "8.12" coq.coq-version then "3.3.0" else null;
+  release."3.3.0".sha256 = "0az4gkp5m8sq0p73dlh0r7ckkzhk7zkg5bndw01bdsy5ywj0vilp";
+  releaseRev = v: "iris-${v}";
 
-  buildInputs = [ coq ];
-  propagatedBuildInputs = [ ssreflect stdpp ];
-
-  enableParallelBuilding = true;
-
-  installFlags = [ "COQLIB=$(out)/lib/coq/${coq.coq-version}/" ];
+  propagatedBuildInputs = [ stdpp ];
 
   meta = {
-    homepage = "https://gitlab.mpi-sws.org/FP/iris-coq";
     description = "The Coq development of the Iris Project";
-    inherit (coq.meta) platforms;
-    license = stdenv.lib.licenses.bsd3;
-    maintainers = [ stdenv.lib.maintainers.vbgl ];
+    license = licenses.bsd3;
+    maintainers = [ maintainers.vbgl ];
   };
-
-  passthru = {
-    compatibleCoqVersions = v: stdenv.lib.versionAtLeast v "8.6";
-  };
-
 }

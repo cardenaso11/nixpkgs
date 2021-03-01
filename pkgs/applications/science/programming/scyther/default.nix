@@ -1,4 +1,4 @@
-{ stdenv, lib, buildEnv, callPackage_i686, fetchFromGitHub, python27Packages, graphviz
+{ stdenv, lib, buildEnv, pkgsi686Linux, fetchFromGitHub, python27Packages, graphviz
 , includeGUI ? true
 , includeProtocols ? true
 }:
@@ -13,19 +13,20 @@ let
   };
 
   meta = with lib; {
-    description = "Scyther is a tool for the automatic verification of security protocols.";
-    homepage = https://www.cs.ox.ac.uk/people/cas.cremers/scyther/;
+    description = "A tool for the automatic verification of security protocols";
+    homepage = "https://www.cs.ox.ac.uk/people/cas.cremers/scyther/";
     license = licenses.gpl2;
     maintainers = with maintainers; [ infinisil ];
     platforms = platforms.linux;
   };
 
-  cli = callPackage_i686 ./cli.nix {
+  cli = pkgsi686Linux.callPackage ./cli.nix {
     inherit version src meta;
   };
 
   gui = stdenv.mkDerivation {
-    name = "scyther-gui-${version}";
+    pname = "scyther-gui";
+    inherit version;
     inherit src meta;
     buildInputs = [
       python27Packages.wrapPython
@@ -47,7 +48,7 @@ let
       python27Packages.wxPython
       graphviz
     ];
- 
+
     installPhase = ''
       mkdir -p "$out"/gui "$out"/bin
       cp -r gui/* "$out"/gui

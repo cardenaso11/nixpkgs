@@ -1,4 +1,4 @@
-{ stdenv
+{ lib
 , buildPythonPackage
 , fetchPypi
 , setuptools_scm
@@ -7,7 +7,6 @@
 }:
 
 buildPythonPackage rec {
-  name = "${pname}-${version}";
   pname = "backports.weakref";
   version = "1.0.post1";
   src = fetchPypi {
@@ -25,7 +24,7 @@ buildPythonPackage rec {
     ${python.interpreter} -m unittest discover tests
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Backports of new features in Python’s weakref module";
     license = licenses.psfl;
     maintainers = with maintainers; [ jyp ];

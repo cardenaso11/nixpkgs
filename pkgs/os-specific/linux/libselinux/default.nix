@@ -1,49 +1,55 @@
-{ stdenv, fetchurl, pcre, pkgconfig, libsepol
-, enablePython ? true, swig ? null, python ? null
+{ lib, stdenv, fetchurl, pcre, pkg-config, libsepol
+, enablePython ? true, swig ? null, python3 ? null
 , fts
 }:
 
-assert enablePython -> swig != null && python != null;
+assert enablePython -> swig != null && python3 != null;
 
-with stdenv.lib;
+with lib;
 
 stdenv.mkDerivation rec {
-  name = "libselinux-${version}";
-  version = "2.7";
+  pname = "libselinux";
+  version = "3.0";
   inherit (libsepol) se_release se_url;
+
+  outputs = [ "bin" "out" "dev" "man" ] ++ optional enablePython "py";
 
   src = fetchurl {
     url = "${se_url}/${se_release}/libselinux-${version}.tar.gz";
-    sha256 = "0mwcq78v6ngbq06xmb9dvilpg0jnl2vs9fgrpakhmmiskdvc1znh";
+    sha256 = "0cr4p0qkr4qd5z1x677vwhz6mlz55kxyijwi2dmrvbhxcw7v78if";
   };
 
-  nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ libsepol pcre fts ]
-             ++ optionals enablePython [ swig python ];
+  nativeBuildInputs = [ pkg-config ] ++ optionals enablePython [ swig python3 ];
+  buildInputs = [ libsepol pcre fts ] ++ optionals enablePython [ python3 ];
 
   # drop fortify here since package uses it by default, leading to compile error:
   # command-line>:0:0: error: "_FORTIFY_SOURCE" redefined [-Werror]
   hardeningDisable = [ "fortify" ];
 
-  NIX_CFLAGS_COMPILE = [ "-Wno-error" ];
+  NIX_CFLAGS_COMPILE = "-Wno-error";
 
-  postPatch = optionalString enablePython ''
-    sed -i -e 's|\$(LIBDIR)/libsepol.a|${libsepol}/lib/libsepol.a|' src/Makefile
-  '';
+  makeFlags = [
+    "PREFIX=$(out)"
+    "INCDIR=$(dev)/include/selinux"
+    "INCLUDEDIR=$(dev)/include"
+    "MAN3DIR=$(man)/share/man/man3"
+    "MAN5DIR=$(man)/share/man/man5"
+    "MAN8DIR=$(man)/share/man/man8"
+    "PYTHON=${python3.pythonForBuild}/bin/python"
+    "PYTHONLIBDIR=$(py)/${python3.sitePackages}"
+    "SBINDIR=$(bin)/sbin"
+    "SHLIBDIR=$(out)/lib"
 
-  # fix install locations
-  preBuild = ''
-    makeFlagsArray+=("PREFIX=$out")
-    makeFlagsArray+=("DESTDIR=$out")
-    makeFlagsArray+=("MAN3DIR=$out/share/man/man3")
-    makeFlagsArray+=("MAN5DIR=$out/share/man/man5")
-    makeFlagsArray+=("MAN8DIR=$out/share/man/man8")
-    makeFlagsArray+=("PYSITEDIR=$out/lib/${python.libPrefix}/site-packages")
+    "LIBSEPOLA=${lib.getLib libsepol}/lib/libsepol.a"
+  ];
+
+  preInstall = ''
+    mkdir -p $py/${python3.sitePackages}/selinux
   '';
 
   installTargets = [ "install" ] ++ optional enablePython "install-pywrap";
 
-  meta = libsepol.meta // {
+  meta = removeAttrs libsepol.meta ["outputsToInstall"] // {
     description = "SELinux core library";
   };
 }

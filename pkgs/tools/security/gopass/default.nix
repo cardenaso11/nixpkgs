@@ -1,47 +1,65 @@
-{ stdenv, buildGoPackage, fetchFromGitHub, git, gnupg, xclip, makeWrapper }:
+{ lib
+, stdenv
+, makeWrapper
+, buildGoModule
+, fetchFromGitHub
+, installShellFiles
+, git
+, gnupg
+, xclip
+, wl-clipboard
+, passAlias ? false
+}:
 
-buildGoPackage rec {
-  version = "1.8.1";
-  name = "gopass-${version}";
+buildGoModule rec {
+  pname = "gopass";
+  version = "1.12.1";
 
-  goPackagePath = "github.com/gopasspw/gopass";
-
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ installShellFiles makeWrapper ];
 
   src = fetchFromGitHub {
     owner = "gopasspw";
-    repo = "gopass";
+    repo = pname;
     rev = "v${version}";
-    sha256 = "1b3caydxz3zf1ky6qvkx0dgidlalvpmga6cjh3gqc269n00lwh6w";
+    sha256 = "0ickzq2swhabxqcg32n1i99bam6ip7c0mhhncgvmw332w6pzgvlb";
   };
 
-  wrapperPath = with stdenv.lib; makeBinPath ([
-    git
-    gnupg
-    xclip
-  ]);
+  vendorSha256 = "0i0dhipp1gdn0xdl4bpi13ksxf7dc9biz9riapm988bldcr5s1kr";
+
+  subPackages = [ "." ];
+
+  doCheck = false;
+
+  buildFlagsArray = [ "-ldflags=-s -w -X main.version=${version} -X main.commit=${src.rev}" ];
+
+  wrapperPath = lib.makeBinPath (
+    [
+      git
+      gnupg
+      xclip
+    ] ++ lib.optional stdenv.isLinux wl-clipboard
+  );
 
   postInstall = ''
-    mkdir -p \
-      $bin/share/bash-completion/completions \
-      $bin/share/zsh/site-functions \
-      $bin/share/fish/vendor_completions.d
-    $bin/bin/gopass completion bash > $bin/share/bash-completion/completions/_gopass
-    $bin/bin/gopass completion zsh  > $bin/share/zsh/site-functions/_gopass
-    $bin/bin/gopass completion fish > $bin/share/fish/vendor_completions.d/gopass.fish
+    HOME=$TMPDIR
+    for shell in bash fish zsh; do
+      $out/bin/gopass completion $shell > gopass.$shell
+      installShellCompletion gopass.$shell
+    done
+  '' + lib.optionalString passAlias ''
+    ln -s $out/bin/gopass $out/bin/pass
   '';
 
   postFixup = ''
-    wrapProgram $bin/bin/gopass \
-      --prefix PATH : "${wrapperPath}"
+    wrapProgram $out/bin/gopass --prefix PATH : "${wrapperPath}"
   '';
 
-  meta = with stdenv.lib; {
-    description     = "The slightly more awesome Standard Unix Password Manager for Teams. Written in Go.";
-    homepage        = https://www.gopass.pw/;
-    license         = licenses.mit;
-    maintainers     = with maintainers; [ andir ];
-    platforms       = platforms.unix;
+  meta = with lib; {
+    description = "The slightly more awesome Standard Unix Password Manager for Teams. Written in Go";
+    homepage = "https://www.gopass.pw/";
+    license = licenses.mit;
+    maintainers = with maintainers; [ andir rvolosatovs ];
+    changelog = "https://github.com/gopasspw/gopass/blob/v${version}/CHANGELOG.md";
 
     longDescription = ''
       gopass is a rewrite of the pass password manager in Go with the aim of

@@ -1,12 +1,12 @@
-{ stdenv, fetchurl, pcre2 }:
+{ lib, stdenv, fetchurl, pcre2 }:
 
 
-stdenv.mkDerivation rec {
-  name = "hardlink-${version}";
+stdenv.mkDerivation {
+  pname = "hardlink";
   version = "1.3-4";
 
   src = fetchurl {
-    url = "http://src.fedoraproject.org/cgit/rpms/hardlink.git/snapshot/hardlink-aa6325ac4e8100b8ac7d38c7f0bc2708e69bd855.tar.xz";
+    url = "https://src.fedoraproject.org/cgit/rpms/hardlink.git/snapshot/hardlink-aa6325ac4e8100b8ac7d38c7f0bc2708e69bd855.tar.xz";
     sha256 = "0g4hyrnd9hpykbf06qvvp3s4yyk7flbd95gilkf7r3w9vqiagvs2";
   };
 
@@ -23,10 +23,10 @@ stdenv.mkDerivation rec {
     cp -f hardlink.1 $out/share/man/man1/hardlink.1
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Consolidate duplicate files via hardlinks";
-    homepage = https://pagure.io/hardlink;
-    repositories.git = http://src.fedoraproject.org/cgit/rpms/hardlink.git;
+    homepage = "https://pagure.io/hardlink";
+    repositories.git = "https://src.fedoraproject.org/cgit/rpms/hardlink.git";
     license = licenses.gpl2Plus;
     platforms = platforms.unix;
   };

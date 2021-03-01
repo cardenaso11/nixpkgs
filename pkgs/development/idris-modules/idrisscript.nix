@@ -1,15 +1,10 @@
 { build-idris-package
 , fetchFromGitHub
-, prelude
 , lib
-, idris
 }:
-
 build-idris-package  {
   name = "idrisscript";
   version = "2017-07-01";
-
-  idrisDeps = [ prelude ];
 
   src = fetchFromGitHub {
     owner = "idris-hackers";
@@ -20,9 +15,8 @@ build-idris-package  {
 
   meta = {
     description = "FFI Bindings to interact with the unsafe world of JavaScript";
-    homepage = https://github.com/idris-hackers/IdrisScript;
+    homepage = "https://github.com/idris-hackers/IdrisScript";
     license = lib.licenses.bsd2;
     maintainers = [ lib.maintainers.brainrape ];
-    inherit (idris.meta) platforms;
   };
 }

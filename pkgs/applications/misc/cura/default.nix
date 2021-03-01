@@ -1,30 +1,39 @@
-{ mkDerivation, lib, fetchFromGitHub, cmake, python3, qtbase, qtquickcontrols2, curaengine }:
+{ mkDerivation, lib, fetchFromGitHub, cmake, python3, qtbase,
+ qtquickcontrols2, qtgraphicaleffects, curaengine, plugins ? [] }:
 
 mkDerivation rec {
-  name = "cura-${version}";
-  version = "3.3.1";
+  pname = "cura";
+  version = "4.8.0";
 
   src = fetchFromGitHub {
     owner = "Ultimaker";
     repo = "Cura";
     rev = version;
-    sha256 = "0a2xxiw1h5cq4nd4pdkq757hap85p2i29msxs57kbfdd78izrjlx";
+    sha256 = "060fqzspipm93ks0inrj7yrj5wmvkdfv8xaxrv22590yb9f95s9m";
   };
 
   materials = fetchFromGitHub {
     owner = "Ultimaker";
     repo = "fdm_materials";
-    rev = "3.3.0";
-    sha256 = "0vf7s4m14aqhdg4m2yjj87kjxi2gpa46mgx86p0a91jwvkxa8a1q";
+    rev = version;
+    sha256 = "0hi9w1fsnazlr0vvxdr3alsdb8m1vjjfp5zhmlz4kyyxhsy3bc33";
   };
 
-  buildInputs = [ qtbase qtquickcontrols2 ];
-  propagatedBuildInputs = with python3.pkgs; [ uranium zeroconf pyserial numpy-stl ];
+  buildInputs = [ qtbase qtquickcontrols2 qtgraphicaleffects ];
+  propagatedBuildInputs = with python3.pkgs; [
+    libsavitar numpy-stl pyserial requests uranium zeroconf pynest2d
+    sentry-sdk trimesh
+  ] ++ plugins;
   nativeBuildInputs = [ cmake python3.pkgs.wrapPython ];
 
   cmakeFlags = [
     "-DURANIUM_DIR=${python3.pkgs.uranium.src}"
     "-DCURA_VERSION=${version}"
+  ];
+
+  makeWrapperArgs = [
+    # hacky workaround for https://github.com/NixOS/nixpkgs/issues/59901
+    "--set OMP_NUM_THREADS 1"
   ];
 
   postPatch = ''
@@ -35,17 +44,22 @@ mkDerivation rec {
   postInstall = ''
     mkdir -p $out/share/cura/resources/materials
     cp ${materials}/*.fdm_material $out/share/cura/resources/materials/
+    mkdir -p $out/lib/cura/plugins
+    for plugin in ${toString plugins}; do
+      ln -s $plugin/lib/cura/plugins/* $out/lib/cura/plugins
+    done
   '';
 
   postFixup = ''
     wrapPythonPrograms
+    wrapQtApp $out/bin/cura
   '';
 
   meta = with lib; {
     description = "3D printer / slicing GUI built on top of the Uranium framework";
-    homepage = https://github.com/Ultimaker/Cura;
-    license = licenses.agpl3;
+    homepage = "https://github.com/Ultimaker/Cura";
+    license = licenses.lgpl3Plus;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ abbradar ];
+    maintainers = with maintainers; [ abbradar gebner ];
   };
 }

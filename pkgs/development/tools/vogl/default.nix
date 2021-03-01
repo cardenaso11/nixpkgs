@@ -1,5 +1,5 @@
 { mkDerivation, lib, fetchFromGitHub
-, cmake, git, pkgconfig, wget, zip
+, cmake, git, pkg-config, wget, zip
 , qtbase, qtx11extras
 , libdwarf, libjpeg_turbo, libunwind, lzma, tinyxml, libX11
 , SDL2, SDL2_gfx, SDL2_image, SDL2_ttf
@@ -7,8 +7,8 @@
 , fetchpatch
 }:
 
-mkDerivation rec {
-  name = "vogl-${version}";
+mkDerivation {
+  pname = "vogl";
   version = "2016-05-13";
 
   src = fetchFromGitHub {
@@ -26,7 +26,7 @@ mkDerivation rec {
     })
   ];
 
-  nativeBuildInputs = [ cmake pkgconfig ];
+  nativeBuildInputs = [ cmake pkg-config ];
 
   buildInputs = [
     git wget zip
@@ -47,10 +47,11 @@ mkDerivation rec {
   ];
 
   meta = with lib; {
-    description = "OpenGL capture / playback debugger.";
-    homepage = https://github.com/ValveSoftware/vogl;
+    description = "OpenGL capture / playback debugger";
+    homepage = "https://github.com/ValveSoftware/vogl";
     license = licenses.mit;
     maintainers = [ maintainers.deepfire ];
     platforms = [ "x86_64-linux" "i686-linux" ];
+    broken = true;
   };
 }

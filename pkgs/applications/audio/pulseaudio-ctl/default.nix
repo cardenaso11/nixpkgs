@@ -1,19 +1,19 @@
-{ stdenv, fetchFromGitHub, makeWrapper
-, bc, dbus, gawk, gnused, libnotify, pulseaudioLight }:
+{ lib, stdenv, fetchFromGitHub, makeWrapper
+, bc, dbus, gawk, gnused, libnotify, pulseaudio }:
 
 let
-  path = stdenv.lib.makeBinPath [ bc dbus gawk gnused libnotify pulseaudioLight ];
+  path = lib.makeBinPath [ bc dbus gawk gnused libnotify pulseaudio ];
   pname = "pulseaudio-ctl";
 
 in stdenv.mkDerivation rec {
   name = "${pname}-${version}";
-  version = "1.66";
+  version = "1.68";
 
   src = fetchFromGitHub {
     owner = "graysky2";
     repo = pname;
     rev = "v${version}";
-    sha256 = "19a24w7y19551ar41q848w7r1imqkl9cpff4dpb7yry7qp1yjg0y";
+    sha256 = "0wrzfanwy18wyawpg8rfvfgjh3lwngqwmfpi4ww3530rfmi84cf0";
   };
 
   postPatch = ''
@@ -31,9 +31,9 @@ in stdenv.mkDerivation rec {
       --prefix PATH : ${path}
   '';
 
-  meta = with stdenv.lib; {
-    description = "Control pulseaudio volume from the shell or mapped to keyboard shortcuts. No need for alsa-utils.";
-    homepage = https://bbs.archlinux.org/viewtopic.php?id=124513;
+  meta = with lib; {
+    description = "Control pulseaudio volume from the shell or mapped to keyboard shortcuts. No need for alsa-utils";
+    homepage = "https://bbs.archlinux.org/viewtopic.php?id=124513";
     license = licenses.mit;
     maintainers = with maintainers; [ peterhoeg ];
     platforms = platforms.linux;

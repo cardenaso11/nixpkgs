@@ -1,4 +1,4 @@
-{ qtModule, qtbase, lib }:
+{ lib, qtModule, qtbase }:
 
 qtModule {
   name = "qtmacextras";

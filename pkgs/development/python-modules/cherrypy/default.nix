@@ -1,30 +1,54 @@
-{ lib, buildPythonPackage, fetchPypi
-, cheroot, portend, routes, six
+{ lib, stdenv, buildPythonPackage, fetchPypi, isPy3k
 , setuptools_scm
-, backports_unittest-mock, objgraph, pathpy, pytest, pytestcov
+, cheroot, portend, more-itertools, zc_lockfile, routes
+, jaraco_collections
+, objgraph, pytest, pytestcov, pathpy, requests_toolbelt, pytest-services
+, fetchpatch
 }:
 
 buildPythonPackage rec {
-  pname = "CherryPy";
-  version = "16.0.2";
+  pname = "cherrypy";
+  version = "18.6.0";
+
+  disabled = !isPy3k;
 
   src = fetchPypi {
-    inherit pname version;
-    sha256 = "858fbff27235a392026b1d821ad815b587815c94fbb14312e2e64cc23766b9c3";
+    pname = "CherryPy";
+    inherit version;
+    sha256 = "16f410izp2c4qhn4n3l5l3qirmkf43h2amjqms8hkl0shgfqwq2n";
   };
 
-  propagatedBuildInputs = [ cheroot portend routes six ];
+  propagatedBuildInputs = [
+    # required
+    cheroot portend more-itertools zc_lockfile
+    jaraco_collections
+    # optional
+    routes
+  ];
 
-  buildInputs = [ setuptools_scm ];
+  nativeBuildInputs = [ setuptools_scm ];
 
-  checkInputs = [ backports_unittest-mock objgraph pathpy pytest pytestcov ];
+  checkInputs = [
+    objgraph pytest pytestcov pathpy requests_toolbelt pytest-services
+  ];
 
+  # Keyboard interrupt ends test suite run
+  # daemonize and autoreload tests have issue with sockets within sandbox
+  # Disable doctest plugin because times out
   checkPhase = ''
-    LANG=en_US.UTF-8 pytest
+    substituteInPlace pytest.ini --replace "--doctest-modules" ""
+    pytest \
+      -k 'not KeyboardInterrupt and not daemonize and not Autoreload' \
+      --deselect=cherrypy/test/test_static.py::StaticTest::test_null_bytes \
+      --deselect=cherrypy/test/test_tools.py::ToolTests::testCombinedTools \
+      ${lib.optionalString stdenv.isDarwin
+        "--deselect=cherrypy/test/test_bus.py::BusMethodTests::test_block"}
   '';
 
+  __darwinAllowLocalNetworking = true;
+
   meta = with lib; {
-    homepage = "http://www.cherrypy.org";
+    homepage = "https://www.cherrypy.org";
     description = "A pythonic, object-oriented HTTP framework";
     license = licenses.bsd3;
   };

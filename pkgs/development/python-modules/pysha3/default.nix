@@ -3,7 +3,6 @@
 buildPythonPackage rec {
   pname = "pysha3";
   version = "1.0.2";
-  name = "${pname}-${version}";
   disabled = pythonOlder "2.7";
 
   src = fetchPypi {
@@ -13,7 +12,7 @@ buildPythonPackage rec {
 
   meta = {
     description = "Backport of hashlib.sha3 for 2.7 to 3.5";
-    homepage = https://github.com/tiran/pysha3;
+    homepage = "https://github.com/tiran/pysha3";
     license = lib.licenses.psfl;
   };
 }

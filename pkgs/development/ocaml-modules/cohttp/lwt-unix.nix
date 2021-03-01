@@ -1,19 +1,19 @@
-{ stdenv, ocaml, findlib, jbuilder, cohttp-lwt
+{ lib, buildDunePackage, cohttp-lwt
 , conduit-lwt-unix, ppx_sexp_conv
 , cmdliner, fmt, magic-mime
 }:
 
-if !stdenv.lib.versionAtLeast cohttp-lwt.version "0.99"
+if !lib.versionAtLeast cohttp-lwt.version "0.99"
 then cohttp-lwt
 else
 
-stdenv.mkDerivation rec {
-	name = "ocaml${ocaml.version}-cohttp-lwt-unix-${version}";
-	inherit (cohttp-lwt) version src installPhase meta;
+buildDunePackage {
+  pname = "cohttp-lwt-unix";
+  inherit (cohttp-lwt) version src meta;
 
-	buildInputs = [ ocaml findlib jbuilder cmdliner ppx_sexp_conv ];
+  useDune2 = true;
 
-	propagatedBuildInputs = [ cohttp-lwt conduit-lwt-unix fmt magic-mime ];
+  buildInputs = [ cmdliner ppx_sexp_conv ];
 
-	buildPhase = "jbuilder build -p cohttp-lwt-unix";
+  propagatedBuildInputs = [ cohttp-lwt conduit-lwt-unix fmt magic-mime ];
 }

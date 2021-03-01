@@ -1,13 +1,14 @@
-{ stdenv, fetchurl, zlib, glib, xorg, dbus, fontconfig, libGL,
+{ lib, stdenv, fetchurl, zlib, glib, xorg, dbus, fontconfig, libGL,
   freetype, xkeyboard_config, makeDesktopItem, makeWrapper }:
 
 stdenv.mkDerivation rec {
-  name = "robo3t-${version}";
-  version = "1.1.1";
+  pname = "robo3t";
+  version = "1.3.1";
+  rev = "7419c406";
 
   src = fetchurl {
-    url = "https://download.robomongo.org/1.1.1/linux/robo3t-${version}-linux-x86_64-c93c6b0.tar.gz";
-    sha256 = "140cn80vg7c8vpdjasqi4b3kyqj4n033lcm3ikz5674x3jr7r5zs";
+    url = "https://download-test.robomongo.org/linux/robo3t-${version}-linux-x86_64-${rev}.tar.gz";
+    sha256 = "1mp5i8iahd4qkwgi5ix98hlg17ivw5da27n0drnr0wk458wn99hi";
   };
 
   icon = fetchurl {
@@ -22,12 +23,12 @@ stdenv.mkDerivation rec {
     comment = "Query GUI for mongodb";
     desktopName = "Robo3T";
     genericName = "MongoDB management tool";
-    categories = "Development;IDE;mongodb;";
+    categories = "Development;IDE;";
   };
 
   nativeBuildInputs = [makeWrapper];
 
-  ldLibraryPath = stdenv.lib.makeLibraryPath [
+  ldLibraryPath = lib.makeLibraryPath [
     stdenv.cc.cc
     zlib
     glib
@@ -69,10 +70,10 @@ stdenv.mkDerivation rec {
   '';
 
   meta = {
-    homepage = https://robomongo.org/;
+    homepage = "https://robomongo.org/";
     description = "Query GUI for mongodb";
     platforms = [ "x86_64-linux" ];
-    license = stdenv.lib.licenses.gpl3;
-    maintainers = [ stdenv.lib.maintainers.eperuffo ];
+    license = lib.licenses.gpl3;
+    maintainers = [ lib.maintainers.eperuffo ];
   };
 }

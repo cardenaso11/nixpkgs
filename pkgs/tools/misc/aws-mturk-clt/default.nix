@@ -1,10 +1,10 @@
-{ stdenv, fetchurl, jre }:
+{ lib, stdenv, fetchurl, jre }:
 
 stdenv.mkDerivation rec {
   name = "aws-mturk-clt-1.3.0";
 
   src = fetchurl {
-    url = "http://mturk.s3.amazonaws.com/CLTSource/${name}.tar.gz";
+    url = "https://mturk.s3.amazonaws.com/CLTSource/${name}.tar.gz";
     sha256 = "00yyc7k3iygg83cknv9i2dsaxwpwzdkc8a2l9j56lg999hw3mqm3";
   };
 
@@ -22,9 +22,9 @@ stdenv.mkDerivation rec {
     ''; # */
 
   meta = {
-    homepage = https://requester.mturk.com/developer;
+    homepage = "https://requester.mturk.com/developer";
     description = "Command line tools for interacting with the Amazon Mechanical Turk";
-    license = stdenv.lib.licenses.amazonsl;
+    license = lib.licenses.amazonsl;
 
     longDescription =
       ''

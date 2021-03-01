@@ -1,7 +1,7 @@
-{ stdenv, fetchurl, unzip }:
+{ lib, stdenv, fetchurl, unzip }:
 
 stdenv.mkDerivation rec {
-  name = "chntpw-${version}";
+  pname = "chntpw";
 
   version = "140201";
 
@@ -11,7 +11,7 @@ stdenv.mkDerivation rec {
   };
 
   buildInputs = [ unzip ]
-    ++ stdenv.lib.optionals stdenv.isLinux [ stdenv.glibc.out stdenv.glibc.static ];
+    ++ lib.optionals stdenv.isLinux [ stdenv.glibc.out stdenv.glibc.static ];
 
   patches = [
     ./00-chntpw-build-arch-autodetect.patch
@@ -22,11 +22,11 @@ stdenv.mkDerivation rec {
     make install PREFIX=$out
   '';
 
-  meta = with stdenv.lib; {
-    homepage = http://pogostick.net/~pnh/ntpasswd/;
+  meta = with lib; {
+    homepage = "http://pogostick.net/~pnh/ntpasswd/";
     description = "An utility to reset the password of any user that has a valid local account on a Windows system";
-    maintainers = with stdenv.lib.maintainers; [ deepfire ];
+    maintainers = with lib.maintainers; [ deepfire ];
     license = licenses.gpl2;
-    platforms = with stdenv.lib.platforms; linux;
+    platforms = with lib.platforms; linux;
   };
 }

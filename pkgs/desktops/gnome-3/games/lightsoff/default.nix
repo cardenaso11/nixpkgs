@@ -1,19 +1,26 @@
-{ stdenv, fetchurl, vala, pkgconfig, gtk3, gnome3, gdk_pixbuf, librsvg, wrapGAppsHook
-, gettext, itstool, clutter, clutter-gtk, libxml2, appstream-glib }:
+{ lib, stdenv, fetchurl, vala, pkg-config, gtk3, gnome3, gdk-pixbuf, librsvg, wrapGAppsHook
+, gettext, itstool, clutter, clutter-gtk, libxml2, appstream-glib
+, meson, ninja, python3 }:
 
 stdenv.mkDerivation rec {
-  name = "lightsoff-${version}";
-  version = "3.28.0";
+  pname = "lightsoff";
+  version = "3.38.0";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/lightsoff/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "0rwh9kz6aphglp79cyrfjab6vy02vclq68f646zjgb9xgg6ar73g";
+    url = "mirror://gnome/sources/lightsoff/${lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "0dpnnw8v1yk1p0y08f9c9xkgswqlm8x83dfn96798nif2zbypdnh";
   };
 
-  nativeBuildInputs = [ vala pkgconfig wrapGAppsHook itstool gettext appstream-glib libxml2];
-  buildInputs = [ gtk3 gnome3.defaultIconTheme gdk_pixbuf librsvg clutter clutter-gtk ];
+  nativeBuildInputs = [
+    vala pkg-config wrapGAppsHook itstool gettext appstream-glib libxml2
+    meson ninja python3
+  ];
+  buildInputs = [ gtk3 gnome3.adwaita-icon-theme gdk-pixbuf librsvg clutter clutter-gtk ];
 
-  enableParallelBuilding = true;
+  postPatch = ''
+    chmod +x build-aux/meson_post_install.py
+    patchShebangs build-aux/meson_post_install.py
+  '';
 
   passthru = {
     updateScript = gnome3.updateScript {
@@ -22,10 +29,10 @@ stdenv.mkDerivation rec {
     };
   };
 
-  meta = with stdenv.lib; {
-    homepage = https://wiki.gnome.org/Apps/Lightsoff;
+  meta = with lib; {
+    homepage = "https://wiki.gnome.org/Apps/Lightsoff";
     description = "Puzzle game, where the objective is to turn off all of the tiles on the board";
-    maintainers = gnome3.maintainers;
+    maintainers = teams.gnome.members;
     license = licenses.gpl2;
     platforms = platforms.linux;
   };

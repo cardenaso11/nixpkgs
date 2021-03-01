@@ -7,11 +7,11 @@
 
 buildPythonPackage rec {
   pname = "regex";
-  version = "2018.06.21";
+  version = "2020.11.13";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "b172583f0c5f104e059a30dd6a1f9d20693031b156558590a745d6cc3192e283";
+    sha256 = "83d6b356e116ca119db8e7c6fc2983289d87b27b3fac238cfe5dca529d884562";
   };
 
   postCheck = ''
@@ -19,9 +19,12 @@ buildPythonPackage rec {
     ${python.interpreter} -c 'import test_regex; test_regex.test_main();'
   '';
 
+  # No tests in archive
+  doCheck = false;
+
   meta = {
     description = "Alternative regular expression module, to replace re";
-    homepage = https://bitbucket.org/mrabarnett/mrab-regex;
+    homepage = "https://bitbucket.org/mrabarnett/mrab-regex";
     license = lib.licenses.psfl;
     maintainers = with lib.maintainers; [ abbradar ];
   };

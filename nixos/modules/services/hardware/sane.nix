@@ -76,7 +76,7 @@ in
     };
 
     hardware.sane.configDir = mkOption {
-      type = types.string;
+      type = types.str;
       internal = true;
       description = "The value of SANE_CONFIG_DIR.";
     };
@@ -124,7 +124,7 @@ in
       environment.sessionVariables = env;
       services.udev.packages = backends;
 
-      users.extraGroups."scanner".gid = config.ids.gids.scanner;
+      users.groups.scanner.gid = config.ids.gids.scanner;
     })
 
     (mkIf config.services.saned.enable {
@@ -148,11 +148,11 @@ in
           # saned needs to distinguish between IPv4 and IPv6 to open matching data sockets.
           BindIPv6Only = "ipv6-only";
           Accept = true;
-          MaxConnections = 1;
+          MaxConnections = 64;
         };
       };
 
-      users.extraUsers."scanner" = {
+      users.users.scanner = {
         uid = config.ids.uids.scanner;
         group = "scanner";
       };

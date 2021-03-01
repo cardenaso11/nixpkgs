@@ -3,7 +3,6 @@
 buildPythonPackage rec {
   pname = "pydbus";
   version = "0.6.0";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -13,7 +12,7 @@ buildPythonPackage rec {
   propagatedBuildInputs = [ pygobject3 ];
 
   meta = {
-    homepage = https://github.com/LEW21/pydbus;
+    homepage = "https://github.com/LEW21/pydbus";
     description = "Pythonic DBus library";
     license = lib.licenses.lgpl2Plus;
     maintainers = with lib.maintainers; [ gnidorah ];

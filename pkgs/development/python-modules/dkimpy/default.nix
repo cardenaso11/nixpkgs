@@ -1,41 +1,28 @@
-{ stdenv, fetchurl, openssl, makeWrapper, buildPythonApplication
-, pytest, dnspython }:
+{ lib, fetchPypi, openssl, buildPythonPackage
+, pytest, dnspython, pynacl, authres, python }:
 
-buildPythonApplication rec {
-  name = "${pname}-${version}";
+buildPythonPackage rec {
   pname = "dkimpy";
-  majorversion = "0.6";
-  minorversion = "2";
-  version = "${majorversion}.${minorversion}";
+  version = "1.0.5";
 
-  src = fetchurl {
-    url = "https://launchpad.net/${pname}/${majorversion}/${majorversion}.${minorversion}/+download/${name}.tar.gz";
-    sha256 = "1hagz8qk0v4ijfbcdq4z28bpgr2mkpr498z76i1vam2d50chmakl";
-  };
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "9a2420bf09af686736773153fca32a02ae11ecbe24b540c26104628959f91121";
+};
 
-  buildInputs = [ pytest ];
-  propagatedBuildInputs =  [ openssl dnspython ];
+  checkInputs = [ pytest ];
+  propagatedBuildInputs =  [ openssl dnspython pynacl authres ];
 
   patchPhase = ''
-    substituteInPlace dknewkey.py --replace \
+    substituteInPlace dkim/dknewkey.py --replace \
       /usr/bin/openssl ${openssl}/bin/openssl
   '';
 
   checkPhase = ''
-    python ./test.py
+    ${python.interpreter} ./test.py
   '';
 
-  postInstall = ''
-    mkdir -p $out/bin $out/libexec
-    mv $out/bin/*.py $out/libexec
-    makeWrapper "$out/libexec/dkimverify.py" $out/bin/dkimverify
-    makeWrapper "$out/libexec/dkimsign.py" $out/bin/dkimsign
-    makeWrapper "$out/libexec/arcverify.py" $out/bin/arcverify
-    makeWrapper "$out/libexec/arcsign.py" $out/bin/arcsign
-    makeWrapper "$out/libexec/dknewkey.py" $out/bin/dknewkey
-  '';
-
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "DKIM + ARC email signing/verification tools + Python module";
     longDescription = ''
       Python module that implements DKIM (DomainKeys Identified Mail) email
@@ -44,7 +31,7 @@ buildPythonApplication rec {
       records. This version also supports the experimental Authenticated
       Received Chain (ARC) protocol.
     '';
-    homepage = https://launchpad.net/dkimpy;
+    homepage = "https://launchpad.net/dkimpy";
     license = licenses.bsd3;
     maintainers = with maintainers; [ leenaars ];
   };

@@ -1,35 +1,40 @@
-{ stdenv, fetchFromGitHub, ocaml, findlib, jbuilder, opam
-, astring, decompress, fmt, hex, logs, mstruct, ocaml_lwt, ocamlgraph, uri
-, alcotest, mtime, nocrypto
+{ stdenv, lib, fetchurl, buildDunePackage
+, alcotest, mtime, mirage-crypto-rng, tls, git-binary
+, angstrom, astring, cstruct, decompress, digestif, encore, duff, fmt, checkseum
+, fpath, ke, logs, lwt, ocamlgraph, uri, rresult, base64
+, result, bigstringaf, optint, mirage-flow, domain-name, emile
+, mimic, carton, carton-lwt, carton-git, ipaddr, psq, crowbar, alcotest-lwt
 }:
 
-stdenv.mkDerivation rec {
-	version = "1.11.5";
-	name = "ocaml${ocaml.version}-git-${version}";
+buildDunePackage rec {
+  pname = "git";
+  version = "3.3.0";
 
-	src = fetchFromGitHub {
-		owner = "mirage";
-		repo = "ocaml-git";
-		rev = version;
-		sha256 = "0r1bxpxjjnl9hh8xbabsxl7svzvd19hfy73a2y1m4kljmw64dpfh";
-	};
+  minimumOCamlVersion = "4.08";
+  useDune2 = true;
 
-	buildInputs = [ ocaml findlib jbuilder alcotest mtime nocrypto ];
+  src = fetchurl {
+    url = "https://github.com/mirage/ocaml-git/releases/download/${version}/git-${version}.tbz";
+    sha256 = "090b67e8f8a02fb52b4d0c7aa445b5ff7353fdb2da00fb37b908f089c6776cd0";
+  };
 
-	propagatedBuildInputs = [ astring decompress fmt hex logs mstruct ocaml_lwt ocamlgraph uri ];
+  buildInputs = [
+    base64
+  ];
+  propagatedBuildInputs = [
+    angstrom astring checkseum cstruct decompress digestif encore duff fmt fpath
+    ke logs lwt ocamlgraph uri rresult result bigstringaf optint mirage-flow
+    domain-name emile mimic carton carton-lwt carton-git ipaddr psq
+  ];
+  checkInputs = [
+    alcotest alcotest-lwt mtime mirage-crypto-rng tls git-binary crowbar
+  ];
+  doCheck = !stdenv.isAarch64;
 
-	buildPhase = "jbuilder build -p git";
-
-	inherit (jbuilder) installPhase;
-
-	doCheck = true;
-	checkPhase = "jbuilder runtest -p git";
-
-	meta = {
-		description = "Git format and protocol in pure OCaml";
-		license = stdenv.lib.licenses.isc;
-		maintainers = [ stdenv.lib.maintainers.vbgl ];
-		inherit (src.meta) homepage;
-		inherit (ocaml.meta) platforms;
-	};
+  meta = {
+    description = "Git format and protocol in pure OCaml";
+    license = lib.licenses.isc;
+    maintainers = with lib.maintainers; [ sternenseemann vbgl ];
+    homepage = "https://github.com/mirage/ocaml-git";
+  };
 }

@@ -2,7 +2,6 @@
 
 buildPythonPackage rec {
   pname = "fn";
-  name = "${pname}-${version}";
   version = "0.4.3";
 
   meta = {
@@ -10,7 +9,7 @@ buildPythonPackage rec {
       Functional programming in Python: implementation of missing
       features to enjoy FP
     '';
-    homepage = https://github.com/kachayev/fn.py;
+    homepage = "https://github.com/kachayev/fn.py";
     license = lib.licenses.asl20;
   };
 

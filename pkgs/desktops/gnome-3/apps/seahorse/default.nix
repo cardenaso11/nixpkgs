@@ -1,32 +1,71 @@
-{ stdenv, intltool, fetchurl, vala
-, pkgconfig, gtk3, glib
-, wrapGAppsHook, itstool, gnupg, libsoup
-, gnome3, librsvg, gdk_pixbuf, gpgme
-, libsecret, avahi, p11-kit, openssh }:
+{ lib, stdenv
+, fetchurl
+, vala
+, meson
+, ninja
+, libpwquality
+, pkg-config
+, gtk3
+, glib
+, wrapGAppsHook
+, itstool
+, gnupg
+, libsoup
+, gnome3
+, gpgme
+, python3
+, openldap
+, gcr
+, libsecret
+, avahi
+, p11-kit
+, openssh
+, gsettings-desktop-schemas
+, libhandy
+}:
 
-let
+stdenv.mkDerivation rec {
   pname = "seahorse";
-  version = "3.20.0";
-in stdenv.mkDerivation rec {
-  name = "${pname}-${version}";
+  version = "3.38.0.1";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/${pname}/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "e2b07461ed54a8333e5628e9b8e517ec2b731068377bf376570aad998274c6df";
+    url = "mirror://gnome/sources/${pname}/${lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    hash = "sha256-x0XdHebhog8ZorB6Q4uO98yiNaaqc0ENt/E3sCHpsqI=";
   };
 
   doCheck = true;
 
-  NIX_CFLAGS_COMPILE = "-I${gnome3.glib.dev}/include/gio-unix-2.0";
-
-  nativeBuildInputs = [ pkgconfig vala intltool itstool wrapGAppsHook ];
-  buildInputs = [
-    gtk3 glib gnome3.gcr
-    gnome3.gsettings-desktop-schemas gnupg
-    gnome3.defaultIconTheme gpgme
-    libsecret avahi libsoup p11-kit
-    openssh
+  nativeBuildInputs = [
+    meson
+    ninja
+    pkg-config
+    vala
+    itstool
+    wrapGAppsHook
+    python3
   ];
+
+  buildInputs = [
+    gtk3
+    glib
+    gcr
+    gsettings-desktop-schemas
+    gnupg
+    gnome3.adwaita-icon-theme
+    gpgme
+    libsecret
+    avahi
+    libsoup
+    p11-kit
+    openssh
+    openldap
+    libpwquality
+    libhandy
+  ];
+
+  postPatch = ''
+    patchShebangs build-aux/
+  '';
 
   passthru = {
     updateScript = gnome3.updateScript {
@@ -35,11 +74,11 @@ in stdenv.mkDerivation rec {
     };
   };
 
-  meta = with stdenv.lib; {
-    homepage = https://wiki.gnome.org/Apps/Seahorse;
+  meta = with lib; {
+    homepage = "https://wiki.gnome.org/Apps/Seahorse";
     description = "Application for managing encryption keys and passwords in the GnomeKeyring";
-    maintainers = gnome3.maintainers;
-    license = licenses.gpl2;
+    maintainers = teams.gnome.members;
+    license = licenses.gpl2Plus;
     platforms = platforms.linux;
   };
 }

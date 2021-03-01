@@ -1,10 +1,11 @@
-{ stdenv, lib, fetchurl, makeDesktopItem, unzip, ant, jdk
+{ stdenv, lib, fetchurl, makeDesktopItem, unzip, ant, jdk8
 # Optional, Jitsi still runs without, but you may pass null:
-, alsaLib, dbus_libs, gtk2, libpulseaudio, openssl, xorg
+, alsaLib, dbus, gtk2, libpulseaudio, openssl, xorg
 }:
 
+let jdk = jdk8; in
 stdenv.mkDerivation rec {
-  name = "jitsi-${version}";
+  pname = "jitsi";
   version = "2.10.5550";
 
   src = fetchurl {
@@ -20,18 +21,16 @@ stdenv.mkDerivation rec {
     comment = "VoIP and Instant Messaging client";
     desktopName = "Jitsi";
     genericName = "Instant Messaging";
-    categories = "Application;Internet;";
+    categories = "Chat";
   };
 
   libPath = lib.makeLibraryPath ([
     stdenv.cc.cc  # For libstdc++.
-  ] ++ lib.filter (x: x != null) [
     alsaLib
-    dbus_libs
+    dbus
     gtk2
     libpulseaudio
     openssl
-  ] ++ lib.optionals (xorg != null) [
     xorg.libX11
     xorg.libXext
     xorg.libXScrnSaver
@@ -41,7 +40,7 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [ unzip ];
   buildInputs = [ ant jdk ];
 
-  buildPhase = ''ant make'';
+  buildPhase = "ant make";
 
   installPhase = ''
     mkdir -p $out
@@ -63,11 +62,11 @@ stdenv.mkDerivation rec {
     done
   '';
 
-  meta = with stdenv.lib; {
-    homepage = https://jitsi.org/;
+  meta = with lib; {
+    homepage = "https://jitsi.org/";
     description = "Open Source Video Calls and Chat";
     license = licenses.lgpl21Plus;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ ndowens ];
+    maintainers = teams.jitsi.members;
   };
 }

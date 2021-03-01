@@ -1,45 +1,50 @@
-{ config, stdenv, substituteAll, fetchFromGitHub, glib, glib_networking, libgtop, pkgs }:
+{ lib, stdenv, substituteAll, fetchpatch, fetchFromGitHub, glib, glib-networking, libgtop, gnome3 }:
 
 stdenv.mkDerivation rec {
-  name = "gnome-shell-system-monitor-${version}";
-  version = "33";
+  pname = "gnome-shell-system-monitor";
+  version = "2020-04-27-unstable";
 
   src = fetchFromGitHub {
     owner = "paradoxxxzero";
     repo = "gnome-shell-system-monitor-applet";
-    rev = "v${version}";
-    sha256 = "0abqaanl5r26x8f0mm0jgrjsr86hcx7mk75dx5c3zz7csw4nclkk";
+    rev = "7f8f0a7b255473941f14d1dcaa35ebf39d3bccd0";
+    sha256 = "tUUvBY0UEUE+T79zVZEAICpKoriFZuuZzi9ArdHdXks=";
   };
 
   buildInputs = [
     glib
-    glib_networking
+    glib-networking
     libgtop
   ];
 
   patches = [
     (substituteAll {
       src = ./paths_and_nonexisting_dirs.patch;
+      clutter_path = gnome3.mutter.libdir; # this should not be used in settings but 🤷‍♀️
       gtop_path = "${libgtop}/lib/girepository-1.0";
-      glib_net_path = "${glib_networking}/lib/girepository-1.0";
+      glib_net_path = "${glib-networking}/lib/girepository-1.0";
     })
   ];
 
   buildPhase = ''
-    ${glib.dev}/bin/glib-compile-schemas --targetdir=${uuid}/schemas ${uuid}/schemas
+    runHook preBuild
+    glib-compile-schemas --targetdir=${uuid}/schemas ${uuid}/schemas
+    runHook postBuild
   '';
 
   installPhase = ''
+    runHook preInstall
     mkdir -p $out/share/gnome-shell/extensions
     cp -r ${uuid} $out/share/gnome-shell/extensions
+    runHook postInstall
   '';
 
   uuid = "system-monitor@paradoxxx.zero.gmail.com";
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Display system informations in gnome shell status bar";
     license = licenses.gpl3Plus;
-    maintainers = with maintainers; [ aneeshusa tiramiseb ];
-    homepage = https://github.com/paradoxxxzero/gnome-shell-system-monitor-applet;
+    maintainers = with maintainers; [ tiramiseb ];
+    homepage = "https://github.com/paradoxxxzero/gnome-shell-system-monitor-applet";
   };
 }

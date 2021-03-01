@@ -1,11 +1,10 @@
-{ stdenv, buildPythonPackage, fetchPypi,
+{ lib, buildPythonPackage, fetchPypi,
   matplotlib, shapely
 }:
 
 buildPythonPackage rec {
   pname = "descartes";
   version = "1.1.0";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -17,9 +16,9 @@ buildPythonPackage rec {
     shapely
   ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Python library to use Shapely or GeoJSON objects as matplotlib paths";
-    homepage = https://bitbucket.org/sgillies/descartes/;
+    homepage = "https://bitbucket.org/sgillies/descartes/";
     license = licenses.bsd3;
     maintainers = with maintainers; [ knedlsepp ];
   };

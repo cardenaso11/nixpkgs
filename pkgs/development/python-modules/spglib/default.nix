@@ -1,27 +1,23 @@
-{ stdenv, buildPythonPackage, fetchPypi, numpy, python }:
+{ lib, buildPythonPackage, fetchPypi, fetchpatch, numpy, nose, pyyaml }:
 
 buildPythonPackage rec {
   pname = "spglib";
-  version = "1.10.3.65";
+  version = "1.16.0";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "55b49227835396b2bcd6afe724e9f37202ad0f61e273bedebd5bf740bad2e8e3";
+    sha256 = "94d056e48e7e6fe2e6fe4161471e774ac03221a6225fd83d551d3184220c1edf";
   };
 
   propagatedBuildInputs = [ numpy ];
 
-  checkPhase = ''
-    cd test
-    ${python.interpreter} -m unittest discover -bv
-  '';
+  checkInputs = [ nose pyyaml ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Python bindings for C library for finding and handling crystal symmetries";
-    homepage = https://atztogo.github.io/spglib;
+    homepage = "https://atztogo.github.io/spglib";
     license = licenses.bsd3;
     maintainers = with maintainers; [ psyanticy ];
   };
-
 }
 

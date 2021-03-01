@@ -1,15 +1,16 @@
-{ stdenv, fetchurl, gettext, pkgconfig, perl
+{ lib, stdenv, fetchurl, gettext, pkg-config, perlPackages
 , libidn2, zlib, pcre, libuuid, libiconv, libintl
-, IOSocketSSL, LWP, python3, lzip
+, python3, lzip
 , libpsl ? null
 , openssl ? null }:
 
 stdenv.mkDerivation rec {
-  name = "wget-1.19.5";
+  pname = "wget";
+  version = "1.20.3";
 
   src = fetchurl {
-    url = "mirror://gnu/wget/${name}.tar.lz";
-    sha256 = "0xfaxmlnih7dhkyks5wi4vrn0n1xshmy6gx6fb2k1120sprydyr9";
+    url = "mirror://gnu/wget/${pname}-${version}.tar.lz";
+    sha256 = "1frajd86ds8vz2hprq30wq8ya89z9dcxnwm8nwk12bbc47l7qq39";
   };
 
   patches = [
@@ -19,7 +20,7 @@ stdenv.mkDerivation rec {
   preConfigure = ''
     patchShebangs doc
 
-  '' + stdenv.lib.optionalString doCheck ''
+  '' + lib.optionalString doCheck ''
     # Work around lack of DNS resolution in chroots.
     for i in "tests/"*.pm "tests/"*.px
     do
@@ -27,19 +28,20 @@ stdenv.mkDerivation rec {
     done
   '';
 
-  nativeBuildInputs = [ gettext pkgconfig perl lzip libiconv libintl ];
+  nativeBuildInputs = [ gettext pkg-config perlPackages.perl lzip libiconv libintl ];
   buildInputs = [ libidn2 zlib pcre libuuid ]
-    ++ stdenv.lib.optionals doCheck [ IOSocketSSL LWP python3 ]
-    ++ stdenv.lib.optional (openssl != null) openssl
-    ++ stdenv.lib.optional (libpsl != null) libpsl
-    ++ stdenv.lib.optional stdenv.isDarwin perl;
+    ++ lib.optionals doCheck [ perlPackages.IOSocketSSL perlPackages.LWP python3 ]
+    ++ lib.optional (openssl != null) openssl
+    ++ lib.optional (libpsl != null) libpsl
+    ++ lib.optional stdenv.isDarwin perlPackages.perl;
 
-  configureFlags =
-    if openssl != null then "--with-ssl=openssl" else "--without-ssl";
+  configureFlags = [
+    (lib.withFeatureAs (openssl != null) "ssl" "openssl")
+  ];
 
   doCheck = false;
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Tool for retrieving files using HTTP, HTTPS, and FTP";
 
     longDescription =
@@ -51,7 +53,7 @@ stdenv.mkDerivation rec {
 
     license = licenses.gpl3Plus;
 
-    homepage = http://www.gnu.org/software/wget/;
+    homepage = "https://www.gnu.org/software/wget/";
 
     maintainers = with maintainers; [ fpletz ];
     platforms = platforms.all;

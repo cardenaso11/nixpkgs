@@ -12,8 +12,7 @@
 , cudatoolkit
 , python
 , mkDerivation
-, stdenv
-, isPy3k
+, lib
 }:
 let
   compyte = import ./compyte.nix {
@@ -22,19 +21,19 @@ let
 in
 buildPythonPackage rec {
   pname = "pycuda";
-  version = "2017.1.1";
-  name = "${pname}-${version}";
+  version = "2020.1";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "0qxmcjax32p1ywicw9sha2rvfbak4kjbx9pq57j3wq4cwf296nkb";
+    sha256 = "effa3b99b55af67f3afba9b0d1b64b4a0add4dd6a33bdd6786df1aa4cc8761a5";
   };
 
-  preConfigure = ''
+  preConfigure = with lib.versions; ''
     ${python.interpreter} configure.py --boost-inc-dir=${boost.dev}/include \
                           --boost-lib-dir=${boost}/lib \
                           --no-use-shipped-boost \
-                          --boost-python-libname=boost_python${stdenv.lib.optionalString isPy3k "3"}
+                          --boost-python-libname=boost_python${major python.version}${minor python.version} \
+                          --cuda-root=${cudatoolkit}
   '';
 
   postInstall = ''
@@ -61,8 +60,8 @@ buildPythonPackage rec {
     Mako
   ];
 
-  meta = with stdenv.lib; {
-    homepage = https://github.com/inducer/pycuda/;
+  meta = with lib; {
+    homepage = "https://github.com/inducer/pycuda/";
     description = "CUDA integration for Python.";
     license = licenses.mit;
     maintainers = with maintainers; [ artuuge ];

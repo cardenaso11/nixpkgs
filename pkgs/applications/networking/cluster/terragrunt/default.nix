@@ -1,35 +1,40 @@
-{ stdenv, lib, buildGoPackage, fetchFromGitHub, terraform-full, makeWrapper }:
+{ lib, buildGoModule, fetchFromGitHub }:
 
-buildGoPackage rec {
-  name = "terragrunt-${version}";
-  version = "0.14.6";
-
-  goPackagePath = "github.com/gruntwork-io/terragrunt";
+buildGoModule rec {
+  pname = "terragrunt";
+  version = "0.28.7";
 
   src = fetchFromGitHub {
-    owner  = "gruntwork-io";
-    repo   = "terragrunt";
-    rev    = "v${version}";
-    sha256 = "14zg1h76wfg6aa78llcnza7kapnl5ks6m2vg73b90azfi49fmkwz";
+    owner = "gruntwork-io";
+    repo = pname;
+    rev = "v${version}";
+    sha256 = "sha256-pM3R85gdP2eVoXx//2tKePNAi14eM8Ut+eXR+vB0Ukk=";
   };
 
-  goDeps = ./deps.nix;
+  vendorSha256 = "sha256-lRJerUYafpkXAGf8MEM8SeG3aB86mlMo7iLpeHFAnd4=";
 
-  buildInputs = [ makeWrapper ];
+  doCheck = false;
 
-  preBuild = ''
-    buildFlagsArray+=("-ldflags" "-X main.VERSION=v${version}")
+  buildFlagsArray = [
+    "-ldflags="
+    "-s"
+    "-w"
+    "-X main.VERSION=v${version}"
+  ];
+
+  doInstallCheck = true;
+  installCheckPhase = ''
+    runHook preInstallCheck
+    $out/bin/terragrunt --help
+    $out/bin/terragrunt --version | grep "v${version}"
+    runHook postInstallCheck
   '';
 
-  postInstall = ''
-    wrapProgram $bin/bin/terragrunt \
-      --set TERRAGRUNT_TFPATH ${lib.getBin terraform-full}/bin/terraform
-  '';
-
-  meta = with stdenv.lib; {
-    description = "A thin wrapper for Terraform that supports locking for Terraform state and enforces best practices.";
-    homepage = https://github.com/gruntwork-io/terragrunt/;
+  meta = with lib; {
+    homepage = "https://terragrunt.gruntwork.io";
+    changelog = "https://github.com/gruntwork-io/terragrunt/releases/tag/v${version}";
+    description = "A thin wrapper for Terraform that supports locking for Terraform state and enforces best practices";
     license = licenses.mit;
-    maintainers = with maintainers; [ peterhoeg ];
+    maintainers = with maintainers; [ peterhoeg jk ];
   };
 }

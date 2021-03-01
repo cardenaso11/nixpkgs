@@ -1,109 +1,125 @@
-{ stdenv, fetchurl, system, makeWrapper, makeDesktopItem,
-  alsaLib, dbus, glib, fontconfig, freetype, libpulseaudio,
-  utillinux, zlib, xorg, udev, sqlite, expat, libv4l, procps, libGL }:
+{ stdenv
+, lib
+, fetchurl
+, makeWrapper
+, fetchFromGitHub
+# Dynamic libraries
+, alsaLib
+, atk
+, cairo
+, dbus
+, libGL
+, fontconfig
+, freetype
+, gtk3
+, gdk-pixbuf
+, glib
+, pango
+, wayland
+, xorg
+, libxkbcommon
+, zlib
+# Runtime
+, coreutils
+, pciutils
+, procps
+, util-linux
+, qttools
+, pulseaudioSupport ? true, libpulseaudio ? null
+}:
+
+assert pulseaudioSupport -> libpulseaudio != null;
 
 let
-
-  version = "2.0.123200.0405";
+  version = "5.5.7011.0206";
   srcs = {
     x86_64-linux = fetchurl {
-      url = "https://zoom.us/client/${version}/zoom_x86_64.tar.xz";
-      sha256 = "1ifwa2xf5mw1ll2j1f39qd7mpyxpc6xj3650dmlnxf525dsm573z";
+      url = "https://zoom.us/client/${version}/zoom_x86_64.pkg.tar.xz";
+      sha256 = "00ahly3kjjznn73vcxgm5wj2pxgw6wdk6vzgd8svfmnl5kqq6c02";
     };
   };
+  dontUnpack = true;
 
-in stdenv.mkDerivation {
-  name = "zoom-us-${version}";
-
-  src = srcs.${system};
-
-  nativeBuildInputs = [ makeWrapper ];
-
-  libPath = stdenv.lib.makeLibraryPath [
+  libs = lib.makeLibraryPath ([
+    # $ LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH:$PWD ldd zoom | grep 'not found'
     alsaLib
-    expat
-    glib
-    freetype
-    libGL
-    libpulseaudio
-    zlib
+    atk
+    cairo
     dbus
+    libGL
     fontconfig
-    sqlite
-    utillinux
-    udev
-
+    freetype
+    gtk3
+    gdk-pixbuf
+    glib
+    pango
+    stdenv.cc.cc
+    wayland
     xorg.libX11
-    xorg.libSM
-    xorg.libICE
     xorg.libxcb
+    xorg.libXcomposite
+    xorg.libXext
+    libxkbcommon
+    xorg.libXrender
+    zlib
     xorg.xcbutilimage
     xorg.xcbutilkeysyms
-    xorg.libXcursor
-    xorg.libXext
     xorg.libXfixes
-    xorg.libXdamage
     xorg.libXtst
-    xorg.libxshmfence
-    xorg.libXi
-    xorg.libXrender
-    xorg.libXcomposite
-    xorg.libXScrnSaver
-    xorg.libXrandr
+  ] ++ lib.optional (pulseaudioSupport) libpulseaudio);
 
-    stdenv.cc.cc
+in stdenv.mkDerivation {
+  name = "zoom-${version}";
+
+  dontUnpack = true;
+
+  nativeBuildInputs = [
+    makeWrapper
   ];
 
   installPhase = ''
     runHook preInstall
-
-    packagePath=$out/share/zoom-us
-    mkdir -p $packagePath
-    mkdir -p $out/bin
-    cp -ar * $packagePath
-
-    patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)"  $packagePath/zoom
-    patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)"  $packagePath/QtWebEngineProcess
-    patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)"  $packagePath/qtdiag
-    patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)"  $packagePath/zopen
-    # included from https://github.com/NixOS/nixpkgs/commit/fc218766333a05c9352b386e0cbb16e1ae84bf53
-    # it works for me without it, but, well...
-    paxmark m $packagePath/zoom
-    #paxmark m $packagePath/QtWebEngineProcess # is this what dtzWill talked about?
-
-    # RUNPATH set via patchelf is used only for half of libraries (why?), so wrap it
-    makeWrapper $packagePath/zoom $out/bin/zoom-us \
-        --prefix LD_LIBRARY_PATH : "$packagePath:$libPath" \
-        --prefix LD_PRELOAD : "${libv4l}/lib/v4l1compat.so" \
-        --prefix PATH : "${procps}/bin" \
-        --set QT_PLUGIN_PATH "$packagePath/platforms" \
-        --set QT_XKB_CONFIG_ROOT "${xorg.xkeyboardconfig}/share/X11/xkb" \
-        --set QTCOMPOSE "${xorg.libX11.out}/share/X11/locale"
-
-    cat > $packagePath/qt.conf <<EOF
-    [Paths]
-    Prefix = $packagePath
-    EOF
-
+    mkdir $out
+    tar -C $out -xf ${srcs.${stdenv.hostPlatform.system}}
+    mv $out/usr/* $out/
     runHook postInstall
   '';
 
-  postInstall = (makeDesktopItem {
-    name = "zoom-us";
-    exec = "$out/bin/zoom-us %U";
-    icon = "$out/share/zoom-us/application-x-zoom.png";
-    desktopName = "Zoom";
-    genericName = "Video Conference";
-    categories = "Network;Application;";
-    mimeType = "x-scheme-handler/zoommtg;";
-  }).buildCommand;
+  postFixup = ''
+    # Desktop File
+    substituteInPlace $out/share/applications/Zoom.desktop \
+        --replace "Exec=/usr/bin/zoom" "Exec=$out/bin/zoom"
+
+    for i in zopen zoom ZoomLauncher; do
+      patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" $out/opt/zoom/$i
+    done
+
+    # ZoomLauncher sets LD_LIBRARY_PATH before execing zoom
+    wrapProgram $out/opt/zoom/zoom \
+      --prefix LD_LIBRARY_PATH ":" ${libs}
+
+    rm $out/bin/zoom
+    # Zoom expects "zopen" executable (needed for web login) to be present in CWD. Or does it expect
+    # everybody runs Zoom only after cd to Zoom package directory? Anyway, :facepalm:
+    makeWrapper $out/opt/zoom/ZoomLauncher $out/bin/zoom \
+      --run "cd $out/opt/zoom" \
+      --prefix PATH : ${lib.makeBinPath [ coreutils glib.dev pciutils procps qttools.dev util-linux ]} \
+      --prefix LD_LIBRARY_PATH ":" ${libs}
+
+    # Backwards compatiblity: we used to call it zoom-us
+    ln -s $out/bin/{zoom,zoom-us}
+  '';
+
+  # already done
+  dontPatchELF = true;
+
+  passthru.updateScript = ./update.sh;
 
   meta = {
-    homepage = https://zoom.us/;
+    homepage = "https://zoom.us/";
     description = "zoom.us video conferencing application";
-    license = stdenv.lib.licenses.unfree;
+    license = lib.licenses.unfree;
     platforms = builtins.attrNames srcs;
-    maintainers = with stdenv.lib.maintainers; [ danbst ];
+    maintainers = with lib.maintainers; [ danbst tadfisher doronbehar ];
   };
-
 }

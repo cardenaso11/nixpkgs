@@ -1,24 +1,21 @@
-{ stdenv, buildPythonPackage, fetchPypi, pip }:
+{ lib, buildPythonPackage, fetchPypi, pip, pytest }:
+
 buildPythonPackage rec {
   pname = "setuptools_scm";
-  name = "${pname}-${version}";
-  version = "2.1.0";
+  version = "4.1.2";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "a767141fecdab1c0b3c8e4c788ac912d7c94a0d6c452d40777ba84f918316379";
+    sha256 = "a8994582e716ec690f33fec70cca0f85bd23ec974e3f783233e4879090a7faa8";
   };
 
-  buildInputs = [ pip ];
-
-  # Seems to fail due to chroot and would cause circular dependency
-  # with pytest
+  # Requires pytest, circular dependency
   doCheck = false;
 
-  meta = with stdenv.lib; {
-    homepage = https://bitbucket.org/pypa/setuptools_scm/;
+  meta = with lib; {
+    homepage = "https://bitbucket.org/pypa/setuptools_scm/";
     description = "Handles managing your python package versions in scm metadata";
     license = licenses.mit;
-    maintainers = with maintainers; [ jgeerds ];
+    maintainers = with maintainers; [ ];
   };
 }

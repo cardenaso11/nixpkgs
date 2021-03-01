@@ -1,22 +1,26 @@
-{ lib, buildPythonPackage, fetchPypi,
-  celery, django, psycopg2
+{ lib, buildPythonPackage, fetchPypi
+, glibcLocales
+, celery, django, psycopg2
 }:
 
 buildPythonPackage rec {
   pname = "djmail";
-  name = "${pname}-${version}";
-  version = "1.1.0";
+  version = "2.0.0";
 
   meta = {
-    description = "Simple, powerfull and nonobstructive django email middleware.";
-    homepage = https://github.com/bameda/djmail;
+    description = "Simple, powerfull and nonobstructive django email middleware";
+    homepage = "https://github.com/bameda/djmail";
     license = lib.licenses.bsd3;
   };
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "87d2a8b4bdf67ae9b312e127ccc873a53116cf297ec786460d782ce82eaa76b5";
+    sha256 = "cf3ce7626305d218a8bf2b6a219266ef8061aceeefc1c70a54170f4105465202";
   };
+
+  nativeBuildInputs = [ glibcLocales ];
+
+  LC_ALL = "en_US.UTF-8";
 
   propagatedBuildInputs = [ celery django psycopg2 ];
 

@@ -172,7 +172,7 @@ in {
           };
 
           database = mkOption {
-            type = types.str;
+            type = types.nullOr types.str;
             default = null;
             description = "Database name to store sms data";
           };
@@ -200,7 +200,7 @@ in {
   };
 
   config = mkIf cfg.enable {
-    users.extraUsers.${cfg.user} = {
+    users.users.${cfg.user} = {
       description = "gammu-smsd user";
       uid = config.ids.uids.gammu-smsd;
       extraGroups = [ "${cfg.device.group}" ];

@@ -1,45 +1,56 @@
-{ lib, stdenv, fetchgit, fetchFromGitHub, makeWrapper, git
-, python3, sshfs-fuse, torsocks, sshuttle, conntrack-tools }:
+{ lib, pythonPackages, fetchFromGitHub, makeWrapper, git
+, sshfs-fuse, torsocks, sshuttle, conntrack-tools , openssh, coreutils
+, iptables, bash }:
 
 let
-  sshuttle-telepresence = lib.overrideDerivation sshuttle (p: {
-    src = fetchgit {
-      url = "https://github.com/datawire/sshuttle.git";
-      rev = "8f881d131a0d5cb203c5a530d233996077f1da1e";
-      sha256 = "0c760xhblz5mpcn5ddqpvivvgn0ixqbhpjsy50dkhgn6lymrx9bx";
-      leaveDotGit = true;
-    };
+  sshuttle-telepresence =
+    let
+      sshuttleTelepresenceRev = "32226ff14d98d58ccad2a699e10cdfa5d86d6269";
+    in
+      lib.overrideDerivation sshuttle (p: {
+        src = fetchFromGitHub {
+          owner = "datawire";
+          repo = "sshuttle";
+          rev = sshuttleTelepresenceRev;
+          sha256 = "1lp5b0h9v59igf8wybjn42w6ajw08blhiqmjwp4r7qnvmvmyaxhh";
+        };
 
-    buildInputs = p.buildInputs ++ [ git ];
-    postPatch = "rm sshuttle/tests/client/test_methods_nat.py";
-    postInstall = "mv $out/bin/sshuttle $out/bin/sshuttle-telepresence";
-  });
-in stdenv.mkDerivation rec {
+        SETUPTOOLS_SCM_PRETEND_VERSION="${sshuttleTelepresenceRev}";
+
+        postPatch = "rm sshuttle/tests/client/test_methods_nat.py";
+        postInstall = "mv $out/bin/sshuttle $out/bin/sshuttle-telepresence";
+      });
+in pythonPackages.buildPythonPackage rec {
   pname = "telepresence";
-  version = "0.67";
-  name = "${pname}-${version}";
+  version = "0.108";
 
   src = fetchFromGitHub {
-    owner = "datawire";
+    owner = "telepresenceio";
     repo = "telepresence";
     rev = version;
-    sha256 = "1bpyzgvrf43yvhwp5bzkp2qf3z9dhjma165w8ssca9g00v4b5vg9";
+    sha256 = "6V0sM0Z+2xNDgL0wIzJOdaUp2Ol4ejNTk9K/pllVa7g=";
   };
 
-  buildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ makeWrapper ];
 
-  phases = ["unpackPhase" "installPhase"];
-
-  installPhase = ''
-    mkdir -p $out/libexec $out/bin
-    cp cli/telepresence $out/libexec/telepresence
-
-    makeWrapper $out/libexec/telepresence $out/bin/telepresence \
-      --prefix PATH : ${lib.makeBinPath [python3 sshfs-fuse torsocks conntrack-tools sshuttle-telepresence]}
+  postInstall = ''
+    wrapProgram $out/bin/telepresence \
+      --prefix PATH : ${lib.makeBinPath [
+        sshfs-fuse
+        torsocks
+        conntrack-tools
+        sshuttle-telepresence
+        openssh
+        coreutils
+        iptables
+        bash
+      ]}
   '';
 
+  doCheck = false;
+
   meta = {
-    homepage = https://www.telepresence.io/;
+    homepage = "https://www.telepresence.io/";
     description = "Local development against a remote Kubernetes or OpenShift cluster";
     license = with lib.licenses; [ asl20 ];
     maintainers = with lib.maintainers; [ offline ];

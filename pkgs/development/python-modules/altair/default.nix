@@ -1,33 +1,62 @@
-{ stdenv, buildPythonPackage, fetchPypi
-, pytest, glibcLocales, vega, pandas, ipython, traitlets }:
+{ lib, buildPythonPackage, fetchPypi, isPy27
+, entrypoints
+, glibcLocales
+, ipython
+, jinja2
+, jsonschema
+, numpy
+, pandas
+, pytest
+, pythonOlder
+, recommonmark
+, six
+, sphinx
+, toolz
+, typing
+, vega_datasets
+}:
 
 buildPythonPackage rec {
   pname = "altair";
-  version = "2.1.0";
+  version = "4.1.0";
+  disabled = isPy27;
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "e8b222588dde98ec614e6808357fde7fa321118db44cc909df2bf30158d931c0";
+    sha256 = "0c99q5dy6f275yg1f137ird08wmwc1z8wmvjickkf2mvyka31p9y";
   };
 
-  postPatch = ''
-    sed -i "s/vega==/vega>=/g" setup.py
-  '';
+  propagatedBuildInputs = [
+    entrypoints
+    jsonschema
+    numpy
+    pandas
+    six
+    toolz
+  ] ++ lib.optionals (pythonOlder "3.5") [ typing ];
 
-  checkInputs = [ pytest glibcLocales ];
+  checkInputs = [
+    glibcLocales
+    ipython
+    jinja2
+    pytest
+    recommonmark
+    sphinx
+    vega_datasets
+  ];
 
   checkPhase = ''
     export LANG=en_US.UTF-8
-    py.test altair --doctest-modules
+    # histogram_responsive.py attempt network access, and cannot be disabled through pytest flags
+    rm altair/examples/histogram_responsive.py
+    pytest --doctest-modules altair
   '';
 
-  propagatedBuildInputs = [ vega pandas ipython traitlets ];
-
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A declarative statistical visualization library for Python.";
-    homepage = https://github.com/altair-viz/altair;
+    homepage = "https://github.com/altair-viz/altair";
     license = licenses.bsd3;
     maintainers = with maintainers; [ teh ];
-    platforms = platforms.linux;
+    platforms = platforms.unix;
   };
 }

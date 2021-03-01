@@ -1,29 +1,32 @@
-{ stdenv, fetchurl, ocaml, findlib, ocamlbuild, topkg }:
+{ lib, ocaml, fetchurl, buildDunePackage
+, bigarray-compat, eqaf, stdlib-shims
+, alcotest, astring, bos, findlib, fpath
+}:
 
-if !stdenv.lib.versionAtLeast ocaml.version "4.3"
-then throw "digestif is not available for OCaml ${ocaml.version}"
-else
+buildDunePackage rec {
+  pname = "digestif";
+  version = "0.9.0";
 
-stdenv.mkDerivation rec {
-  name = "ocaml${ocaml.version}-digestif-${version}";
-  version = "0.5";
+  useDune2 = true;
 
   src = fetchurl {
-    url = "https://github.com/mirage/digestif/releases/download/v${version}/digestif-${version}.tbz";
-    sha256 = "0fsyfi5ps17j3wjav5176gf6z3a5xcw9aqhcr1gml9n9ayfbkhrd";
+    url = "https://github.com/mirage/digestif/releases/download/v${version}/digestif-v${version}.tbz";
+    sha256 = "0vk9prgjp46xs8qizq7szkj6mqjj2ymncs2016bc8zswcdc1a3q4";
   };
 
-  unpackCmd = "tar -xjf $curSrc";
+  propagatedBuildInputs = [ bigarray-compat eqaf stdlib-shims ];
 
-  buildInputs = [ ocaml findlib ocamlbuild topkg ];
+  checkInputs = [ alcotest astring bos fpath ];
+  doCheck = lib.versionAtLeast ocaml.version "4.05";
 
-  inherit (topkg) buildPhase installPhase;
+  postCheck = ''
+    ocaml -I ${findlib}/lib/ocaml/${ocaml.version}/site-lib/ test/test_runes.ml
+  '';
 
   meta = {
     description = "Simple hash algorithms in OCaml";
     homepage = "https://github.com/mirage/digestif";
-    license = stdenv.lib.licenses.mit;
-    maintainers = [ stdenv.lib.maintainers.vbgl ];
-    inherit (ocaml.meta) platforms;
+    license = lib.licenses.mit;
+    maintainers = [ lib.maintainers.vbgl ];
   };
 }

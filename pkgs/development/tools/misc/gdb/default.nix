@@ -1,65 +1,77 @@
-{ stdenv
+{ lib, stdenv, targetPackages
 
 # Build time
-, fetchurl, pkgconfig, perl, texinfo, setupDebugInfoDirs
+, fetchurl, pkg-config, perl, texinfo, setupDebugInfoDirs, buildPackages
 
 # Run time
-, ncurses, readline, gmp, mpfr, expat, zlib, dejagnu
+, ncurses, readline, gmp, mpfr, expat, libipt, zlib, dejagnu
 
-, buildPlatform, hostPlatform, targetPlatform
-
-, pythonSupport ? hostPlatform == buildPlatform && !hostPlatform.isCygwin, python ? null
+, pythonSupport ? stdenv.hostPlatform == stdenv.buildPlatform && !stdenv.hostPlatform.isCygwin, python3 ? null
 , guile ? null
-
-# Additional dependencies for GNU/Hurd.
-, mig ? null, hurd ? null
-
+, safePaths ? [
+   # $debugdir:$datadir/auto-load are whitelisted by default by GDB
+   "$debugdir" "$datadir/auto-load"
+   # targetPackages so we get the right libc when cross-compiling and using buildPackages.gdb
+   targetPackages.stdenv.cc.cc.lib
+  ]
 }:
 
 let
-  basename = "gdb-${version}";
-  version = "8.1";
+  basename = "gdb";
+  targetPrefix = lib.optionalString (stdenv.targetPlatform != stdenv.hostPlatform)
+                 "${stdenv.targetPlatform.config}-";
 in
 
-assert targetPlatform.isHurd -> mig != null && hurd != null;
-assert pythonSupport -> python != null;
+assert pythonSupport -> python3 != null;
 
 stdenv.mkDerivation rec {
-  name =
-    stdenv.lib.optionalString (targetPlatform != hostPlatform)
-                              (targetPlatform.config + "-")
-    + basename;
+  pname = targetPrefix + basename;
+  version = "10.1";
 
   src = fetchurl {
-    url = "mirror://gnu/gdb/${basename}.tar.xz";
-    sha256 = "0d2bpqk58fqlx21rbnk8mbcjlggzc9kb5sjirrfrrrjq70ka0qdg";
+    url = "mirror://gnu/gdb/${basename}-${version}.tar.xz";
+    sha256 = "1h32dckz1y8fnyxh22iyw8h3hnhxr79v1ng85px3ljn1xv71wbzq";
   };
 
-  patches = [ ./debug-info-from-env.patch ]
-    ++ stdenv.lib.optional stdenv.isDarwin ./darwin-target-match.patch;
+  postPatch = if stdenv.isDarwin then ''
+    substituteInPlace gdb/darwin-nat.c \
+      --replace '#include "bfd/mach-o.h"' '#include "mach-o.h"'
+  '' else null;
 
-  nativeBuildInputs = [ pkgconfig texinfo perl setupDebugInfoDirs ]
-    # TODO(@Ericson2314) not sure if should be host or target
-    ++ stdenv.lib.optional targetPlatform.isHurd mig;
+  patches = [
+    ./debug-info-from-env.patch
+  ] ++ lib.optionals stdenv.isDarwin [
+    ./darwin-target-match.patch
+  ];
 
-  buildInputs = [ ncurses readline gmp mpfr expat zlib guile ]
-    ++ stdenv.lib.optional pythonSupport python
-    ++ stdenv.lib.optional targetPlatform.isHurd hurd
-    ++ stdenv.lib.optional doCheck dejagnu;
+  nativeBuildInputs = [ pkg-config texinfo perl setupDebugInfoDirs ];
+
+  buildInputs = [ ncurses readline gmp mpfr expat libipt zlib guile ]
+    ++ lib.optional pythonSupport python3
+    ++ lib.optional doCheck dejagnu;
 
   propagatedNativeBuildInputs = [ setupDebugInfoDirs ];
+
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
 
   enableParallelBuilding = true;
 
   # darwin build fails with format hardening since v7.12
-  hardeningDisable = stdenv.lib.optionals stdenv.isDarwin [ "format" ];
+  hardeningDisable = lib.optionals stdenv.isDarwin [ "format" ];
 
   NIX_CFLAGS_COMPILE = "-Wno-format-nonliteral";
 
   # TODO(@Ericson2314): Always pass "--target" and always prefix.
-  configurePlatforms = [ "build" "host" ] ++ stdenv.lib.optional (targetPlatform != hostPlatform) "target";
+  configurePlatforms = [ "build" "host" ] ++ lib.optional (stdenv.targetPlatform != stdenv.hostPlatform) "target";
 
-  configureFlags = with stdenv.lib; [
+  # GDB have to be built out of tree.
+  preConfigure = ''
+    mkdir _build
+    cd _build
+  '';
+  configureScript = "../configure";
+
+  configureFlags = with lib; [
     "--enable-targets=all" "--enable-64-bit-bfd"
     "--disable-install-libbfd"
     "--disable-shared" "--enable-static"
@@ -69,7 +81,9 @@ stdenv.mkDerivation rec {
     "--with-gmp=${gmp.dev}"
     "--with-mpfr=${mpfr.dev}"
     "--with-expat" "--with-libexpat-prefix=${expat.dev}"
-  ] ++ stdenv.lib.optional (!pythonSupport) "--without-python";
+    "--with-auto-load-safe-path=${builtins.concatStringsSep ":" safePaths}"
+  ] ++ lib.optional (!pythonSupport) "--without-python"
+    ++ lib.optional stdenv.hostPlatform.isMusl "--disable-nls";
 
   postInstall =
     '' # Remove Info files already provided by Binutils and other packages.
@@ -79,7 +93,7 @@ stdenv.mkDerivation rec {
   # TODO: Investigate & fix the test failures.
   doCheck = false;
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "The GNU Project debugger";
 
     longDescription = ''
@@ -88,11 +102,11 @@ stdenv.mkDerivation rec {
       program was doing at the moment it crashed.
     '';
 
-    homepage = http://www.gnu.org/software/gdb/;
+    homepage = "https://www.gnu.org/software/gdb/";
 
-    license = stdenv.lib.licenses.gpl3Plus;
+    license = lib.licenses.gpl3Plus;
 
     platforms = with platforms; linux ++ cygwin ++ darwin;
-    maintainers = with maintainers; [ pierron ];
+    maintainers = with maintainers; [ pierron globin lsix ];
   };
 }

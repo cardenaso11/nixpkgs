@@ -19,6 +19,7 @@ in
   options = {
 
     services.radvd.enable = mkOption {
+      type = types.bool;
       default = false;
       description =
         ''
@@ -32,6 +33,7 @@ in
     };
 
     services.radvd.config = mkOption {
+      type = types.lines;
       example =
         ''
           interface eth0 {
@@ -52,7 +54,7 @@ in
 
   config = mkIf cfg.enable {
 
-    users.extraUsers.radvd =
+    users.users.radvd =
       { uid = config.ids.uids.radvd;
         description = "Router Advertisement Daemon User";
       };

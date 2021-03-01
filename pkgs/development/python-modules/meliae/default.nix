@@ -1,4 +1,4 @@
-{ stdenv
+{ lib
 , buildPythonPackage
 , fetchPypi
 , cython
@@ -9,7 +9,6 @@
 buildPythonPackage rec {
   pname = "meliae";
   version = "0.4.0";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname;
@@ -33,9 +32,9 @@ buildPythonPackage rec {
 
   propagatedBuildInputs = [ cython ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Python Memory Usage Analyzer";
-    homepage = https://launchpad.net/meliae;
+    homepage = "https://launchpad.net/meliae";
     license = licenses.gpl3;
     maintainers = with maintainers; [ xvapx ];
   };

@@ -1,20 +1,30 @@
-{ stdenv, fetchzip, libmnl ? null, makeWrapper ? null, wireguard-go ? null }:
+{ lib, stdenv
+, fetchzip
+, nixosTests
+, iptables ? null
+, iproute ? null
+, makeWrapper ? null
+, openresolv ? null
+, procps ? null
+, wireguard-go ? null
+}:
 
-with stdenv.lib;
+with lib;
 
 stdenv.mkDerivation rec {
-  name = "wireguard-tools-${version}";
-  version = "0.0.20180613";
+  pname = "wireguard-tools";
+  version = "1.0.20210223";
 
   src = fetchzip {
-    url = "https://git.zx2c4.com/WireGuard/snapshot/WireGuard-${version}.tar.xz";
-    sha256 = "0xndf5qxc4s0gsidzm0v4ivara6k2shjbr74xfcdpc0apfgyk2fz";
+    url = "https://git.zx2c4.com/wireguard-tools/snapshot/wireguard-tools-${version}.tar.xz";
+    sha256 = "sha256-YlqviVEYrGYZAJtUg2zAU8AzsQotxguljltC3N2ruUc=";
   };
 
-  sourceRoot = "source/src/tools";
+  outputs = [ "out" "man" ];
 
-  nativeBuildInputs = [ (optional stdenv.isDarwin makeWrapper) ];
-  buildInputs = [ (optional stdenv.isLinux libmnl) ];
+  sourceRoot = "source/src";
+
+  nativeBuildInputs = [ makeWrapper ];
 
   makeFlags = [
     "DESTDIR=$(out)"
@@ -27,18 +37,27 @@ stdenv.mkDerivation rec {
   postFixup = ''
     substituteInPlace $out/lib/systemd/system/wg-quick@.service \
       --replace /usr/bin $out/bin
+  '' + optionalString stdenv.isLinux ''
+    for f in $out/bin/*; do
+      wrapProgram $f --prefix PATH : ${makeBinPath [procps iproute iptables openresolv]}
+    done
   '' + optionalString stdenv.isDarwin ''
     for f in $out/bin/*; do
       wrapProgram $f --prefix PATH : ${wireguard-go}/bin
     done
   '';
 
-  meta = with stdenv.lib; {
+  passthru = {
+    updateScript = ./update.sh;
+    tests = nixosTests.wireguard;
+  };
+
+  meta = {
     description = "Tools for the WireGuard secure network tunnel";
-    downloadPage = https://git.zx2c4.com/WireGuard/refs/;
-    homepage = https://www.wireguard.com/;
+    downloadPage = "https://git.zx2c4.com/wireguard-tools/refs/";
+    homepage = "https://www.wireguard.com/";
     license = licenses.gpl2;
-    maintainers = with maintainers; [ ericsagnes mic92 zx2c4 ];
+    maintainers = with maintainers; [ elseym ericsagnes mic92 zx2c4 globin ma27 xwvvvvwx ];
     platforms = platforms.unix;
   };
 }

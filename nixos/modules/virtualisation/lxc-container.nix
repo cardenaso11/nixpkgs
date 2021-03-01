@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ lib, ... }:
 
 with lib;
 
@@ -8,10 +8,10 @@ with lib;
   ];
 
   # Allow the user to login as root without password.
-  users.extraUsers.root.initialHashedPassword = mkOverride 150 "";
+  users.users.root.initialHashedPassword = mkOverride 150 "";
 
   # Some more help text.
-  services.mingetty.helpLine =
+  services.getty.helpLine =
     ''
 
       Log in as "root" with an empty password.

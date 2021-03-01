@@ -1,20 +1,43 @@
-{ stdenv, buildPythonPackage, fetchPypi
-, six, requests-cache, pygments, pyquery }:
+{ lib
+, buildPythonPackage
+, fetchPypi
+, six
+, pygments
+, pyquery
+, cachelib
+, appdirs
+, keep
+}:
 
 buildPythonPackage rec {
   pname = "howdoi";
-  version = "1.1.7";
+  version = "2.0.10";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "1dx9ms0b3z3bx02paj78cyi788d8l6cpd3jqbn3j88w736i4jknz";
+    sha256 = "e561e3c5d4f39ab1f86e9f24bb0b2803ee6e312de61e90907f739aa638f35215";
   };
 
-  propagatedBuildInputs = [ six requests-cache pygments pyquery ];
+  postPatch = ''
+    substituteInPlace setup.py --replace 'cachelib==0.1' 'cachelib'
+  '';
 
-  meta = with stdenv.lib; {
+  propagatedBuildInputs = [ six pygments pyquery cachelib appdirs keep ];
+
+  # author hasn't included page_cache directory (which allows tests to run without
+  # external requests) in pypi tarball. github repo doesn't have release revisions
+  # clearly tagged. re-enable tests when either is sorted.
+  doCheck = false;
+  preCheck = ''
+    mv howdoi _howdoi
+    export HOME=$(mktemp -d)
+  '';
+  pythonImportsCheck = [ "howdoi" ];
+
+  meta = with lib; {
     description = "Instant coding answers via the command line";
-    homepage = https://pypi.python.org/pypi/howdoi;
+    homepage = "https://pypi.python.org/pypi/howdoi";
     license = licenses.mit;
+    maintainers = [ maintainers.costrouc ];
   };
 }

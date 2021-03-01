@@ -1,10 +1,10 @@
-{ stdenv, fetchurl, libX11, libXinerama, imlib2 }:
+{ lib, stdenv, fetchurl, libX11, libXinerama, imlib2 }:
 
-stdenv.mkDerivation rec {
-  name = "imlibsetroot-${version}";
+stdenv.mkDerivation {
+  pname = "imlibsetroot";
   version = "1.2";
   src = fetchurl {
-    url = "http://robotmonkeys.net/wp-content/uploads/2010/03/imlibsetroot-12.tar.gz";
+    url = "https://robotmonkeys.net/wp-content/uploads/2010/03/imlibsetroot-12.tar.gz";
     sha256 = "8c1b3b7c861e4d865883ec13a96b8e4ab22464a87d4e6c67255b17a88e3cfd1c";
   };
 
@@ -19,11 +19,11 @@ stdenv.mkDerivation rec {
     install -m 755 imlibsetroot $out/bin
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A Xinerama Aware Background Changer";
-    homepage = http://robotmonkeys.net/2010/03/30/imlibsetroot/;
+    homepage = "http://robotmonkeys.net/2010/03/30/imlibsetroot/";
     license = licenses.gpl2;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ lucas8 ];
+    maintainers = with maintainers; [ dwarfmaster ];
   };
 }

@@ -1,14 +1,14 @@
-{ stdenv, binutils, cmake, zlib, fetchFromGitHub }:
+{ lib, stdenv, cmake, zlib, fetchFromGitHub }:
 
 stdenv.mkDerivation rec {
-  version = "2018-05-22";
-  name = "bloaty-${version}";
+  version = "1.1";
+  pname = "bloaty";
 
   src = fetchFromGitHub {
     owner = "google";
     repo = "bloaty";
-    rev = "054788b091ccfd43b05b9817062139145096d440";
-    sha256 = "0pmv66137ipzsjjdz004n61pz3aipjhh3b0w0y1406clqpwkvpjm";
+    rev = "v${version}";
+    sha256 = "1556gb8gb8jwf5mwxppcqz3mp269b5jhd51kj341iqkbn27zzngk";
     fetchSubmodules = true;
   };
 
@@ -16,21 +16,17 @@ stdenv.mkDerivation rec {
 
   buildInputs = [ zlib ];
 
-  enableParallelBuilding = true;
-
   doCheck = true;
-
-  checkPhase = "ctest";
 
   installPhase = ''
     install -Dm755 {.,$out/bin}/bloaty
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "a size profiler for binaries";
-    homepage = https://github.com/google/bloaty;
+    homepage = "https://github.com/google/bloaty";
     license = licenses.asl20;
     platforms = platforms.unix;
-    maintainers = [ maintainers.dtzWill ];
+    maintainers = with maintainers; [ dtzWill ];
   };
 }

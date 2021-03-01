@@ -1,6 +1,6 @@
-{ stdenv, fetchurl, unzip }:
+{ lib, stdenv, fetchurl, unzip }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   name = "nvidia-video-sdk-6.0.1";
 
   src = fetchurl {
@@ -18,9 +18,9 @@ stdenv.mkDerivation rec {
     cp -R Samples/common/inc/* $out/include
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "The NVIDIA Video Codec SDK";
-    homepage = https://developer.nvidia.com/nvidia-video-codec-sdk;
+    homepage = "https://developer.nvidia.com/nvidia-video-codec-sdk";
     license = licenses.unfree;
   };
 }

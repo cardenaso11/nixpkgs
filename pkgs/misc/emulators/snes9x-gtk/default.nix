@@ -1,27 +1,24 @@
-{ stdenv, fetchFromGitHub, autoreconfHook, wrapGAppsHook, intltool, pkgconfig
-, SDL2, zlib, gtk3, libxml2, libXv, epoxy, minizip, portaudio }:
+{ lib, stdenv, fetchFromGitHub, meson, ninja, pkg-config, wrapGAppsHook
+, SDL2, zlib, gtk3, libxml2, libXv, epoxy, minizip, pulseaudio, portaudio }:
 
 stdenv.mkDerivation rec {
-  name = "snes9x-gtk-${version}";
-  version = "1.56.1";
+  pname = "snes9x-gtk";
+  version = "1.60";
 
   src = fetchFromGitHub {
     owner = "snes9xgit";
     repo = "snes9x";
     rev = version;
-    sha256 = "1zj67fkv0l20k8gn8svarsm8zmznh7jmqkk7nxbdf68xmcxzhr38";
+    sha256 = "12hpn7zcdvp30ldpw2zf115yjqv55n1ldjbids7vx0lvbpr06dm1";
   };
 
   enableParallelBuilding = true;
-  nativeBuildInputs = [ autoreconfHook wrapGAppsHook intltool pkgconfig ];
-  buildInputs = [ SDL2 zlib gtk3 libxml2 libXv epoxy minizip portaudio ];
+  nativeBuildInputs = [ meson ninja pkg-config wrapGAppsHook ];
+  buildInputs = [ SDL2 zlib gtk3 libxml2 libXv epoxy minizip pulseaudio portaudio ];
 
-  preAutoreconf = ''
-    cd gtk
-    intltoolize
-  '';
+  preConfigure = "cd gtk";
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     homepage = "http://www.snes9x.com";
     description = "Super Nintendo Entertainment System (SNES) emulator";
 

@@ -1,33 +1,29 @@
-{ stdenv, fetchurl, cmake, blas, liblapack, gfortran, gmm, fltk, libjpeg
-, zlib, libGLU_combined, libGLU, xorg }:
+{ lib, stdenv, fetchurl, cmake, blas, lapack, gfortran, gmm, fltk, libjpeg
+, zlib, libGL, libGLU, xorg, opencascade-occt }:
 
-let version = "3.0.6"; in
+assert (!blas.isILP64) && (!lapack.isILP64);
 
-stdenv.mkDerivation {
-  name = "gmsh-${version}";
+stdenv.mkDerivation rec {
+  pname = "gmsh";
+  version = "4.7.1";
 
   src = fetchurl {
     url = "http://gmsh.info/src/gmsh-${version}-source.tgz";
-    sha256 = "0ywqhr0zmdhn8dvi6l8z1vkfycyv67fdrz6b95mb39np832bq04p";
+    sha256 = "0shwi41van3k0z6rnpl3sz5nh46xbyyljwfpcp8pwxbc26aw5169";
   };
 
-  # The original CMakeLists tries to use some version of the Lapack lib
-  # that is supposed to work without Fortran but didn't for me.
-  patches = [ ./CMakeLists.txt.patch ];
-
-  buildInputs = [ cmake blas liblapack gmm fltk libjpeg zlib libGLU_combined
+  buildInputs = [ blas lapack gmm fltk libjpeg zlib libGLU libGL
     libGLU xorg.libXrender xorg.libXcursor xorg.libXfixes xorg.libXext
     xorg.libXft xorg.libXinerama xorg.libX11 xorg.libSM xorg.libICE
+    opencascade-occt
   ];
 
-  nativeBuildInputs = [ gfortran ];
-
-  enableParallelBuilding = true;
+  nativeBuildInputs = [ cmake gfortran ];
 
   meta = {
     description = "A three-dimensional finite element mesh generator";
-    homepage = http://gmsh.info/;
-    platforms = stdenv.lib.platforms.all;
-    license = stdenv.lib.licenses.gpl2Plus;
+    homepage = "http://gmsh.info/";
+    platforms = [ "x86_64-linux" ];
+    license = lib.licenses.gpl2Plus;
   };
 }

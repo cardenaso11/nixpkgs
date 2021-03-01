@@ -1,29 +1,31 @@
-{stdenv, fetchFromGitHub, buildOcaml, ocaml, opaline,
- cppo, ppx_tools, ounit, ppx_deriving}:
+{ lib, fetchurl, buildDunePackage, ocaml
+, ounit, ppx_deriving, ppx_tools_versioned
+, ppxlib, ocaml-migrate-parsetree
+}:
 
-buildOcaml rec {
-  name = "ppx_import";
+buildDunePackage rec {
+  pname = "ppx_import";
+  version = "1.7.1";
 
-  version = "1.4";
+  useDune2 = true;
 
-  minimumSupportedOcamlVersion = "4.02";
+  minimumOCamlVersion = "4.04";
 
-  src = fetchFromGitHub {
-    owner = "ocaml-ppx";
-    repo = "ppx_import";
-    rev = "v${version}";
-    sha256 = "14c2lp7r9080c4hsb1y1drbxxx3v44b7ib5wfh3kkh3f1jfsjwbk";
+  src = fetchurl {
+    url = "https://github.com/ocaml-ppx/ppx_import/releases/download/v${version}/ppx_import-v${version}.tbz";
+    sha256 = "16dyxfb7syz659rqa7yq36ny5vzl7gkqd7f4m6qm2zkjc1gc8j4v";
   };
 
-  buildInputs = [ cppo ounit ppx_deriving opaline ];
+  propagatedBuildInputs = [
+    ppxlib ppx_tools_versioned ocaml-migrate-parsetree
+  ];
 
   doCheck = true;
-  checkTarget = "test";
+  checkInputs = [ ounit ppx_deriving ];
 
-  installPhase = "opaline -prefix $out -libdir $OCAMLFIND_DESTDIR";
-
-  meta = with stdenv.lib; {
+  meta = {
     description = "A syntax extension that allows to pull in types or signatures from other compiled interface files";
-    license = licenses.mit;
+    license = lib.licenses.mit;
+    homepage = "https://github.com/ocaml-ppx/ppx_import";
   };
 }

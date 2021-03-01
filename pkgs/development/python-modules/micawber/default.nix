@@ -1,18 +1,18 @@
-{ stdenv, buildPythonPackage, fetchPypi, beautifulsoup4 }:
+{ lib, buildPythonPackage, fetchPypi, beautifulsoup4 }:
 
 buildPythonPackage rec {
   pname = "micawber";
-  version = "0.3.5";
+  version = "0.5.2";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "0pnq6j8f144virhri0drgf0058x6qcxfd5yrb0ynbwr8djh326yn";
+    sha256 = "ac2d737d8ff27ed01ea3825ed8806970e8137d7b342cef37b39b6dd17e6eb3a4";
   };
 
   propagatedBuildInputs = [ beautifulsoup4 ];
 
-  meta = with stdenv.lib; {
-    homepage = http://micawber.readthedocs.io/en/latest/;
+  meta = with lib; {
+    homepage = "https://micawber.readthedocs.io/en/latest/";
     description = "A small library for extracting rich content from urls";
     license = licenses.mit;
     longDescription = ''

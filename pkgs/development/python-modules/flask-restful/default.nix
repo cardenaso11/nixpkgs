@@ -1,28 +1,29 @@
-{ stdenv, buildPythonPackage, fetchPypi, isPy3k
-, nose, mock, blinker
+{ lib, buildPythonPackage, fetchPypi, fetchpatch, isPy3k
+, nose, mock, blinker, pytest
 , flask, six, pytz, aniso8601, pycrypto
 }:
 
 buildPythonPackage rec {
-  name = "${pname}-${version}";
   pname = "Flask-RESTful";
-  version = "0.3.6";
+  version = "0.3.8";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "01rlvl2iq074ciyn4schmjip7cyplkwkysbb8f610zil06am35ap";
+    sha256 = "05b9lzx5yc3wgml2bcq50lq35h66m8zpj6dc9advcb5z3acsbaay";
   };
 
-# TypeError: Only byte strings can be passed to C code
-  patchPhase = if isPy3k then ''
-    rm tests/test_crypto.py tests/test_paging.py
-    '' else null;
-  buildInputs = [ nose mock blinker ];
   propagatedBuildInputs = [ flask six pytz aniso8601 pycrypto ];
-  PYTHON_EGG_CACHE = "`pwd`/.egg-cache";
 
-  meta = with stdenv.lib; {
-    homepage = "http://flask-restful.readthedocs.io/";
+  checkInputs = [ pytest nose mock blinker ];
+
+  # test_reqparse.py: werkzeug move Multidict location (only imported in tests)
+  # handle_non_api_error isn't updated for addition encoding argument
+  checkPhase = ''
+    pytest --ignore=tests/test_reqparse.py -k 'not handle_non_api_error'
+  '';
+
+  meta = with lib; {
+    homepage = "https://flask-restful.readthedocs.io/";
     description = "REST API building blocks for Flask";
     license = licenses.bsd3;
   };

@@ -1,30 +1,41 @@
-{ stdenv, buildPythonPackage, fetchPypi, iana-etc, libredirect,
-  pytest, case, kombu, billiard, pytz, anyjson, amqp, eventlet
+{ lib, buildPythonPackage, fetchPypi
+, billiard, click, click-didyoumean, click-repl, kombu, pytz, vine
+, boto3, case, moto, pytest, pytest-celery, pytest-subtests, pytest-timeout
 }:
 
 buildPythonPackage rec {
   pname = "celery";
-  version = "4.2.0";
+  version = "5.0.2";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "ff727c115533edbc7b81b2b4ba1ec88d1c2fc4836e1e2f4c3c33a76ff53e5d7f";
+    sha256 = "012c814967fe89e3f5d2cf49df2dba3de5f29253a7f4f2270e8fce6b901b4ebf";
   };
 
-  # make /etc/protocols accessible to fix socket.getprotobyname('tcp') in sandbox
-  preCheck = stdenv.lib.optionalString stdenv.isLinux ''
-    export NIX_REDIRECTS=/etc/protocols=${iana-etc}/etc/protocols \
-      LD_PRELOAD=${libredirect}/lib/libredirect.so
-  '';
-  postCheck = stdenv.lib.optionalString stdenv.isLinux ''
-    unset NIX_REDIRECTS LD_PRELOAD
+  postPatch = ''
+    substituteInPlace requirements/test.txt \
+      --replace "moto==1.3.7" moto
   '';
 
-  buildInputs = [ pytest case ];
-  propagatedBuildInputs = [ kombu billiard pytz anyjson amqp eventlet ];
+  propagatedBuildInputs = [ billiard click click-didyoumean click-repl kombu pytz vine ];
 
-  meta = with stdenv.lib; {
-    homepage = https://github.com/celery/celery/;
+  checkInputs = [ boto3 case moto pytest pytest-celery pytest-subtests pytest-timeout ];
+
+  # ignore test that's incompatible with pytest5
+  # test_eventlet touches network
+  # test_mongodb requires pymongo
+  # test_multi tries to create directories under /var
+  checkPhase = ''
+    pytest -k 'not restore_current_app_fallback and not msgpack and not on_apply and not pytest' \
+      --ignore=t/unit/contrib/test_pytest.py \
+      --ignore=t/unit/concurrency/test_eventlet.py \
+      --ignore=t/unit/bin/test_multi.py \
+      --ignore=t/unit/apps/test_multi.py \
+      --ignore=t/unit/backends/test_mongodb.py
+  '';
+
+  meta = with lib; {
+    homepage = "https://github.com/celery/celery/";
     description = "Distributed task queue";
     license = licenses.bsd3;
   };

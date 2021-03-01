@@ -4,39 +4,50 @@
 
 let
   apple-source-releases = callPackage ../os-specific/darwin/apple-source-releases { };
+
+  impure-cmds = callPackage ../os-specific/darwin/impure-cmds { };
 in
 
-(apple-source-releases // {
+(impure-cmds // apple-source-releases // {
 
   callPackage = newScope (darwin.apple_sdk.frameworks // darwin);
 
-  apple_sdk = callPackage ../os-specific/darwin/apple-sdk { };
+  stdenvNoCF = stdenv.override {
+    extraBuildInputs = [];
+  };
+
+  apple_sdk = callPackage ../os-specific/darwin/apple-sdk {
+    inherit (darwin) darwin-stubs print-reexports;
+  };
 
   binutils-unwrapped = callPackage ../os-specific/darwin/binutils {
     inherit (darwin) cctools;
     inherit (pkgs) binutils-unwrapped;
+    inherit (pkgs.llvmPackages_7) llvm;
   };
 
   binutils = pkgs.wrapBintoolsWith {
     libc =
-      if pkgs.targetPlatform != pkgs.hostPlatform
+      if stdenv.targetPlatform != stdenv.hostPlatform
       then pkgs.libcCross
       else pkgs.stdenv.cc.libc;
     bintools = darwin.binutils-unwrapped;
   };
 
   cctools = callPackage ../os-specific/darwin/cctools/port.nix {
-    inherit (darwin) libobjc maloader;
+    inherit (darwin) libobjc maloader libtapi;
     stdenv = if stdenv.isDarwin then stdenv else pkgs.libcxxStdenv;
     libcxxabi = pkgs.libcxxabi;
   };
 
-  cf-private = callPackage ../os-specific/darwin/cf-private {
-    inherit (apple-source-releases) CF;
-    inherit (darwin) osx_private_sdk;
-  };
+  # TODO: remove alias.
+  cf-private = darwin.apple_sdk.frameworks.CoreFoundation;
 
   DarwinTools = callPackage ../os-specific/darwin/DarwinTools { };
+
+  darwin-stubs = callPackage ../os-specific/darwin/darwin-stubs { };
+
+  print-reexports = callPackage ../os-specific/darwin/apple-sdk/print-reexports { };
 
   maloader = callPackage ../os-specific/darwin/maloader {
     inherit (darwin) opencflite;
@@ -44,10 +55,10 @@ in
 
   insert_dylib = callPackage ../os-specific/darwin/insert_dylib { };
 
-  iosSdkPkgs = darwin.callPackage ../os-specific/darwin/ios-sdk-pkgs {
+  iosSdkPkgs = darwin.callPackage ../os-specific/darwin/xcode/sdk-pkgs.nix {
     buildIosSdk = buildPackages.darwin.iosSdkPkgs.sdk;
     targetIosSdkPkgs = targetPackages.darwin.iosSdkPkgs;
-    xcode = darwin.xcode_8_2;
+    xcode = darwin.xcode;
     inherit (pkgs.llvmPackages) clang-unwrapped;
   };
 
@@ -59,25 +70,34 @@ in
 
   opencflite = callPackage ../os-specific/darwin/opencflite { };
 
-  osx_private_sdk = callPackage ../os-specific/darwin/osx-private-sdk { };
-
-  security_tool = darwin.callPackage ../os-specific/darwin/security-tool {
-    Security-framework = darwin.apple_sdk.frameworks.Security;
-  };
-
   stubs = callPackages ../os-specific/darwin/stubs { };
 
-  trash = callPackage ../os-specific/darwin/trash { inherit (darwin.apple_sdk) frameworks; };
+  trash = darwin.callPackage ../os-specific/darwin/trash { };
 
   usr-include = callPackage ../os-specific/darwin/usr-include { };
 
-  inherit (callPackages ../os-specific/darwin/xcode { } )
-          xcode_8_1 xcode_8_2 xcode_9_1 xcode_9_2 xcode_9_4 xcode;
+  inherit (callPackages ../os-specific/darwin/xcode { })
+    xcode_8_1 xcode_8_2
+    xcode_9_1 xcode_9_2 xcode_9_4 xcode_9_4_1
+    xcode_10_2 xcode_10_2_1 xcode_10_3
+    xcode_11
+    xcode;
 
   CoreSymbolication = callPackage ../os-specific/darwin/CoreSymbolication { };
 
-  swift-corelibs = callPackages ../os-specific/darwin/swift-corelibs { };
+  CF = callPackage ../os-specific/darwin/swift-corelibs/corefoundation.nix { inherit (darwin) objc4 ICU; };
+
+  # As the name says, this is broken, but I don't want to lose it since it's a direction we want to go in
+  # libdispatch-broken = callPackage ../os-specific/darwin/swift-corelibs/libdispatch.nix { inherit (darwin) apple_sdk_sierra xnu; };
 
   darling = callPackage ../os-specific/darwin/darling/default.nix { };
+
+  libtapi = callPackage ../os-specific/darwin/libtapi {};
+
+  ios-deploy = callPackage ../os-specific/darwin/ios-deploy {};
+
+  discrete-scroll = callPackage ../os-specific/darwin/discrete-scroll {
+    inherit (darwin.apple_sdk.frameworks) Cocoa;
+  };
 
 })

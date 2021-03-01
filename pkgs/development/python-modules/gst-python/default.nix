@@ -1,46 +1,60 @@
-{ fetchurl, stdenv, meson, ninja, pkgconfig, python, pygobject3
-, gst-plugins-base, ncurses
+{ lib
+, buildPythonPackage
+, fetchurl
+, meson
+, ninja
+
+, pkg-config
+, python3
+, pygobject3
+, gobject-introspection
+, gst-plugins-base
+, isPy3k
 }:
 
-stdenv.mkDerivation rec {
+buildPythonPackage rec {
   pname = "gst-python";
-  version = "1.14.0";
-  name = "${pname}-${version}";
+  version = "1.18.0";
 
-  src = fetchurl {
-    urls = [
-      "${meta.homepage}/src/gst-python/${name}.tar.xz"
-      "mirror://gentoo/distfiles/${name}.tar.xz"
-      ];
-    sha256 = "1rlr6gl4lg97ng4jxh3gb2ldmywm15vwsa72nvggr8qa2l8q3fg0";
-  };
+  format = "other";
 
   outputs = [ "out" "dev" ];
 
-  nativeBuildInputs = [ meson ninja pkgconfig python ];
+  src = fetchurl {
+    url = "${meta.homepage}/src/gst-python/${pname}-${version}.tar.xz";
+    sha256 = "0ifx2s2j24sj2w5jm7cxyg1kinnhbxiz4x0qp3gnsjlwbawfigvn";
+  };
 
-  # XXX: in the Libs.private field of python3.pc
-  buildInputs = [ ncurses ];
+  # Python 2.x is not supported.
+  disabled = !isPy3k;
 
-  mesonFlags = [
-    "-Dpygi-overrides-dir=${python.sitePackages}/gi/overrides"
+  nativeBuildInputs = [
+    meson
+    ninja
+    pkg-config
+    python3
+    gobject-introspection
+    gst-plugins-base
   ];
 
-  postPatch = ''
-    chmod +x scripts/pythondetector # patchShebangs requires executable file
-    patchShebangs scripts/pythondetector
-  '';
+  propagatedBuildInputs = [
+    gst-plugins-base
+    pygobject3
+  ];
 
-  propagatedBuildInputs = [ gst-plugins-base pygobject3 ];
+  mesonFlags = [
+    "-Dpygi-overrides-dir=${placeholder "out"}/${python3.sitePackages}/gi/overrides"
+  ];
 
-  # Needed for python.buildEnv
-  passthru.pythonPath = [];
+  doCheck = true;
 
-  meta = {
-    homepage = https://gstreamer.freedesktop.org;
+  # TODO: Meson setup hook does not like buildPythonPackage
+  # https://github.com/NixOS/nixpkgs/issues/47390
+  installCheckPhase = "meson test --print-errorlogs";
 
+  meta = with lib; {
+    homepage = "https://gstreamer.freedesktop.org";
     description = "Python bindings for GStreamer";
-
-    license = stdenv.lib.licenses.lgpl2Plus;
+    license = licenses.lgpl2Plus;
   };
 }

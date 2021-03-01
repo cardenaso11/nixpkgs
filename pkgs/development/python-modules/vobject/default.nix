@@ -1,12 +1,12 @@
 { lib, buildPythonPackage, fetchPypi, isPyPy, python, dateutil }:
 
 buildPythonPackage rec {
-  version = "0.9.5";
+  version = "0.9.6.1";
   pname = "vobject";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "0f56cae196303d875682b9648b4bb43ffc769d2f0f800958e0a506af867b1243";
+    sha256 = "96512aec74b90abb71f6b53898dd7fe47300cc940104c4f79148f0671f790101";
   };
 
   disabled = isPyPy;
@@ -17,7 +17,7 @@ buildPythonPackage rec {
 
   meta = with lib; {
     description = "Module for reading vCard and vCalendar files";
-    homepage = http://eventable.github.io/vobject/;
+    homepage = "http://eventable.github.io/vobject/";
     license = licenses.asl20;
     maintainers = with maintainers; [ ];
   };

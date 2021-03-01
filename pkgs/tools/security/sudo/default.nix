@@ -1,18 +1,16 @@
-{ stdenv, fetchurl, coreutils, pam, groff, sssd
+{ lib, stdenv, fetchurl, coreutils, pam, groff, sssd, nixosTests
 , sendmailPath ? "/run/wrappers/bin/sendmail"
 , withInsults ? false
 , withSssd ? false
 }:
 
 stdenv.mkDerivation rec {
-  name = "sudo-1.8.23";
+  pname = "sudo";
+  version = "1.9.5p2";
 
   src = fetchurl {
-    urls =
-      [ "ftp://ftp.sudo.ws/pub/sudo/${name}.tar.gz"
-        "ftp://ftp.sudo.ws/pub/sudo/OLD/${name}.tar.gz"
-      ];
-    sha256 = "0yg62wq8rcrbr7qvh3wgfg2g4bwanbi50cr2lf2cfyy8dydx4qyq";
+    url = "https://www.sudo.ws/dist/${pname}-${version}.tar.gz";
+    sha256 = "0y093z4f3822rc88g9asdch12nljdamp817vjxk04mca7ks2x7jk";
   };
 
   prePatch = ''
@@ -29,10 +27,10 @@ stdenv.mkDerivation rec {
     "--with-iologdir=/var/log/sudo-io"
     "--with-sendmail=${sendmailPath}"
     "--enable-tmpfiles.d=no"
-  ] ++ stdenv.lib.optional withInsults [
+  ] ++ lib.optional withInsults [
     "--with-insults"
     "--with-all-insults"
-  ] ++ stdenv.lib.optional withSssd [
+  ] ++ lib.optional withSssd [
     "--with-sssd"
     "--with-sssd-lib=${sssd}/lib"
   ];
@@ -48,7 +46,7 @@ stdenv.mkDerivation rec {
       #define _PATH_MV "${coreutils}/bin/mv"
     EOF
     makeFlags="install_uid=$(id -u) install_gid=$(id -g)"
-    installFlags="sudoers_uid=$(id -u) sudoers_gid=$(id -g) sysconfdir=$out/etc rundir=$TMPDIR/dummy vardir=$TMPDIR/dummy"
+    installFlags="sudoers_uid=$(id -u) sudoers_gid=$(id -g) sysconfdir=$out/etc rundir=$TMPDIR/dummy vardir=$TMPDIR/dummy DESTDIR=/"
     '';
 
   nativeBuildInputs = [ groff ];
@@ -63,6 +61,8 @@ stdenv.mkDerivation rec {
     rm -f $out/share/doc/sudo/ChangeLog
     '';
 
+  passthru.tests = { inherit (nixosTests) sudo; };
+
   meta = {
     description = "A command to run commands as root";
 
@@ -74,12 +74,12 @@ stdenv.mkDerivation rec {
       providing an audit trail of the commands and their arguments.
       '';
 
-    homepage = https://www.sudo.ws/;
+    homepage = "https://www.sudo.ws/";
 
-    license = https://www.sudo.ws/sudo/license.html;
+    license = "https://www.sudo.ws/sudo/license.html";
 
-    maintainers = [ stdenv.lib.maintainers.eelco ];
+    maintainers = with lib.maintainers; [ eelco delroth ];
 
-    platforms = stdenv.lib.platforms.linux;
+    platforms = lib.platforms.linux;
   };
 }

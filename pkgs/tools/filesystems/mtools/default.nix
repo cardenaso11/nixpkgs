@@ -1,26 +1,25 @@
-{ stdenv, fetchurl }:
+{ lib, stdenv, fetchurl }:
 
 stdenv.mkDerivation rec {
-  name = "mtools-4.0.18";
+  pname = "mtools";
+  version = "4.0.26";
 
   src = fetchurl {
-    url = "mirror://gnu/mtools/${name}.tar.bz2";
-    sha256 = "119gdfnsxc6hzicnsf718k0fxgy2q14pxn7557rc96aki20czsar";
+    url = "mirror://gnu/mtools/${pname}-${version}.tar.bz2";
+    sha256 = "06pabnjc4r2vv3dzfm6q97g6jbp2k5bhmcdwv2cf25ka8y5ir7sk";
   };
 
-  # Prevents errors such as "mainloop.c:89:15: error: expected ')'"
-  # Upstream issue https://lists.gnu.org/archive/html/info-mtools/2014-02/msg00000.html
-  patches = stdenv.lib.optional stdenv.isDarwin ./UNUSED-darwin.patch;
+  patches = lib.optional stdenv.isDarwin ./UNUSED-darwin.patch;
 
   # fails to find X on darwin
-  configureFlags = stdenv.lib.optional stdenv.isDarwin "--without-x";
+  configureFlags = lib.optional stdenv.isDarwin "--without-x";
 
   doCheck = true;
 
-  meta = {
-    homepage = http://www.gnu.org/software/mtools/;
+  meta = with lib; {
+    homepage = "https://www.gnu.org/software/mtools/";
     description = "Utilities to access MS-DOS disks";
-    platforms = stdenv.lib.platforms.unix;
-    maintainers = [ ];
+    platforms = platforms.unix;
+    license = licenses.gpl3;
   };
 }

@@ -1,38 +1,51 @@
-{ stdenv, fetchurl, fetchpatch, runCommand, perl, zlib, makeWrapper }:
+{ lib
+, stdenv
+, fetchFromGitHub
+, substituteAll
+, binutils
+, asciidoc
+, cmake
+, perl
+, zstd
+, xcodebuild
+, makeWrapper
+}:
 
 let ccache = stdenv.mkDerivation rec {
-  name = "ccache-${version}";
-  version = "3.4.1";
+  pname = "ccache";
+  version = "4.2";
 
-  src = fetchurl {
-    sha256 = "1pppi4jbkkj641cdynmc35jaj40jjicw7gj75ran5qs5886jcblc";
-    url = "mirror://samba/ccache/${name}.tar.xz";
+  src = fetchFromGitHub {
+    owner = pname;
+    repo = pname;
+    rev = "v${version}";
+    sha256 = "1lr9804xyzbs72f9jbbzy1fjqxwrwpb4rp431wqialvms4251d8f";
   };
 
-  nativeBuildInputs = [ perl ];
+  patches = lib.optional stdenv.isDarwin (substituteAll {
+    src = ./force-objdump-on-darwin.patch;
+    objdump = "${binutils.bintools}/bin/objdump";
+  });
 
-  buildInputs = [ zlib ];
+  nativeBuildInputs = [ asciidoc cmake perl ];
+
+  buildInputs = [ zstd ];
 
   outputs = [ "out" "man" ];
 
-  # non to be fail on filesystems with unconventional blocksizes (zfs on Hydra?)
-  patches = [
-    ./fix-debug-prefix-map-suite.patch
-    ./skip-fs-dependent-test.patch
-  ];
-
-  postPatch = ''
-    substituteInPlace Makefile.in --replace 'objs) $(extra_libs)' 'objs)'
+  doCheck = true;
+  checkInputs = lib.optional stdenv.isDarwin xcodebuild;
+  checkPhase = ''
+    export HOME=$(mktemp -d)
+    ctest --output-on-failure ${lib.optionalString stdenv.isDarwin ''
+      -E '^(test.nocpp2|test.modules)$'
+    ''}
   '';
 
-  doCheck = !stdenv.isDarwin;
-
-  passthru = let
-      unwrappedCC = stdenv.cc.cc;
-    in {
+  passthru = {
     # A derivation that provides gcc and g++ commands, but that
     # will end up calling ccache for the given cacheDir
-    links = extraConfig: stdenv.mkDerivation rec {
+    links = {unwrappedCC, extraConfig}: stdenv.mkDerivation {
       name = "ccache-links";
       passthru = {
         isClang = unwrappedCC.isClang or false;
@@ -47,7 +60,7 @@ let ccache = stdenv.mkDerivation rec {
           local cname="$1"
           if [ -x "${unwrappedCC}/bin/$cname" ]; then
             makeWrapper ${ccache}/bin/ccache $out/bin/$cname \
-              --run ${stdenv.lib.escapeShellArg extraConfig} \
+              --run ${lib.escapeShellArg extraConfig} \
               --add-flags ${unwrappedCC}/bin/$cname
           fi
         }
@@ -71,11 +84,12 @@ let ccache = stdenv.mkDerivation rec {
     };
   };
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Compiler cache for fast recompilation of C/C++ code";
-    homepage = http://ccache.samba.org/;
-    downloadPage = https://ccache.samba.org/download.html;
+    homepage = "https://ccache.dev";
+    downloadPage = "https://ccache.dev/download.html";
     license = licenses.gpl3Plus;
+    maintainers = with maintainers; [ metadark r-burns ];
     platforms = platforms.unix;
   };
 };

@@ -1,8 +1,8 @@
-{ stdenv, fetchFromGitHub, perl, kmod }:
+{ lib, stdenv, fetchFromGitHub, perl, kmod, coreutils }:
 
 # Requires the acpi_call kernel module in order to run.
 stdenv.mkDerivation rec {
-  name = "tpacpi-bat-${version}";
+  pname = "tpacpi-bat";
   version = "3.1";
 
   src = fetchFromGitHub {
@@ -20,13 +20,15 @@ stdenv.mkDerivation rec {
   '';
 
   postPatch = ''
-    substituteInPlace tpacpi-bat --replace modprobe ${kmod}/bin/modprobe
+    substituteInPlace tpacpi-bat \
+      --replace modprobe ${kmod}/bin/modprobe \
+      --replace cat ${coreutils}/bin/cat
   '';
 
   meta = {
-    maintainers = [stdenv.lib.maintainers.orbekk];
-    platforms = stdenv.lib.platforms.linux;
+    maintainers = [lib.maintainers.orbekk];
+    platforms = lib.platforms.linux;
     description = "Tool to set battery charging thesholds on Lenovo Thinkpad";
-    license = stdenv.lib.licenses.gpl3Plus;
+    license = lib.licenses.gpl3Plus;
   };
 }

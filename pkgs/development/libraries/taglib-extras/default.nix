@@ -1,4 +1,4 @@
-{stdenv, fetchurl, cmake, taglib}:
+{lib, stdenv, fetchurl, cmake, taglib}:
 
 stdenv.mkDerivation rec {
   name = "taglib-extras-1.0.1";
@@ -14,7 +14,9 @@ stdenv.mkDerivation rec {
     sed -i -e 's/STRLESS/VERSION_LESS/g' cmake/modules/FindTaglib.cmake
   '';
 
-  meta = {
-    platforms = stdenv.lib.platforms.unix;
+  meta = with lib; {
+    description = "Additional taglib plugins";
+    platforms = platforms.unix;
+    license = licenses.lgpl2;
   };
 }

@@ -1,57 +1,39 @@
-{ stdenv, fetchFromGitHub, perl }:
+{ lib, stdenv
+, fetchFromGitHub
+
+, cmake
+, ninja
+, perl # Project uses Perl for scripting and testing
+, python
+
+, enableThreading ? true # Threading can be disabled to increase security https://tls.mbed.org/kb/development/thread-safety-and-multi-threading
+}:
 
 stdenv.mkDerivation rec {
-  name = "mbedtls-2.10.0";
+  pname = "mbedtls";
+  version = "2.16.9"; # nixpkgs-update: no auto update
 
   src = fetchFromGitHub {
     owner = "ARMmbed";
     repo = "mbedtls";
-    rev = name;
-    sha256 = "0im83kqf7a64ywxh6dnv0by3gwxww93zx5wpdqglr6xp7b8yg4xk";
+    rev = "${pname}-${version}";
+    sha256 = "0mz7n373b8d287crwi6kq2hb8ryyi228j38h25744lqai23qj5cf";
   };
 
-  nativeBuildInputs = [ perl ];
+  nativeBuildInputs = [ cmake ninja perl python ];
 
-  postPatch = ''
-    patchShebangs .
-  '' + stdenv.lib.optionalString stdenv.isDarwin ''
-    substituteInPlace library/Makefile --replace "-soname" "-install_name"
-    substituteInPlace tests/scripts/run-test-suites.pl --replace "LD_LIBRARY_PATH" "DYLD_LIBRARY_PATH"
-    # Necessary for install_name_tool below
-    echo "LOCAL_LDFLAGS += -headerpad_max_install_names" >> programs/Makefile
+  postConfigure = lib.optionals enableThreading ''
+    perl scripts/config.pl set MBEDTLS_THREADING_C    # Threading abstraction layer
+    perl scripts/config.pl set MBEDTLS_THREADING_PTHREAD    # POSIX thread wrapper layer for the threading layer.
   '';
 
-  makeFlags = [
-    "SHARED=1"
-  ] ++ stdenv.lib.optionals stdenv.isDarwin [
-    "DLEXT=dylib"
-  ];
+  cmakeFlags = [ "-DUSE_SHARED_MBEDTLS_LIBRARY=on" ];
 
-  installFlags = [
-    "DESTDIR=\${out}"
-  ];
-
-  postInstall = stdenv.lib.optionalString stdenv.isDarwin ''
-    install_name_tool -change libmbedcrypto.dylib $out/lib/libmbedcrypto.dylib $out/lib/libmbedtls.dylib
-    install_name_tool -change libmbedcrypto.dylib $out/lib/libmbedcrypto.dylib $out/lib/libmbedx509.dylib
-    install_name_tool -change libmbedx509.dylib $out/lib/libmbedx509.dylib $out/lib/libmbedtls.dylib
-
-    for exe in $out/bin/*; do
-      if [[ $exe != *.sh ]]; then
-        install_name_tool -change libmbedtls.dylib $out/lib/libmbedtls.dylib $exe
-        install_name_tool -change libmbedx509.dylib $out/lib/libmbedx509.dylib $exe
-        install_name_tool -change libmbedcrypto.dylib $out/lib/libmbedcrypto.dylib $exe
-      fi
-    done
-  '';
-
-  doCheck = true;
-
-  meta = with stdenv.lib; {
-    homepage = https://tls.mbed.org/;
-    description = "Portable cryptographic and SSL/TLS library, aka polarssl";
-    license = licenses.gpl3;
+  meta = with lib; {
+    homepage = "https://tls.mbed.org/";
+    description = "Portable cryptographic and TLS library, formerly known as PolarSSL";
+    license = licenses.asl20;
     platforms = platforms.all;
-    maintainers = with maintainers; [ wkennington fpletz ];
+    maintainers = with maintainers; [ fpletz ];
   };
 }

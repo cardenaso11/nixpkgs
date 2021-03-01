@@ -1,17 +1,10 @@
 { build-idris-package
 , fetchFromGitHub
-, prelude
 , lib
-, idris
 }:
-
 build-idris-package  {
   name = "bytes";
   version = "2018-02-10";
-
-  idrisDeps = [ prelude ];
-
-  extraBuildInputs = [ idris ];
 
   src = fetchFromGitHub {
     owner = "ziman";
@@ -22,8 +15,7 @@ build-idris-package  {
 
   meta = {
     description = "FFI-based byte buffers for Idris";
-    homepage = https://github.com/ziman/idris-bytes;
+    homepage = "https://github.com/ziman/idris-bytes";
     maintainers = [ lib.maintainers.brainrape ];
-    inherit (idris.meta) platforms;
   };
 }

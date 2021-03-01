@@ -31,10 +31,9 @@
 
     # Idris wrapper with specified compiler and library paths, used to build packages
 
-    idris =
-        (pkgs.callPackage ./idris-wrapper.nix {})
-          idris-no-deps
-          { path = [ pkgs.gcc ]; lib = [pkgs.gmp]; };
+    idris = pkgs.callPackage ./idris-wrapper.nix {
+      inherit idris-no-deps;
+    };
 
     # Utilities for building packages
 
@@ -76,8 +75,6 @@
 
     cube = callPackage ./cube.nix {};
 
-    curses = callPackage ./curses.nix {};
-
     data = callPackage ./data.nix {};
 
     derive = callPackage ./derive.nix {};
@@ -105,8 +102,6 @@
     hamt = callPackage ./hamt.nix {};
 
     html = callPackage ./html.nix {};
-
-    heyting-algebra = callPackage ./heyting-algebra.nix {};
 
     hezarfen = callPackage ./hezarfen.nix {};
 
@@ -154,6 +149,8 @@
 
     protobuf = callPackage ./protobuf.nix {};
 
+    quantities = callPackage ./quantities.nix {};
+
     rationals = callPackage ./rationals.nix {};
 
     recursion_schemes = callPackage ./recursion_schemes.nix {};
@@ -179,6 +176,8 @@
     tap = callPackage ./tap.nix {};
 
     test = callPackage ./test.nix {};
+
+    tf-random = callPackage ./tfrandom.nix {};
 
     tlhydra = callPackage ./tlhydra.nix {};
 

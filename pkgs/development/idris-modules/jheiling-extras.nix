@@ -1,16 +1,13 @@
 { build-idris-package
 , fetchFromGitHub
-, prelude
 , contrib
 , lib
-, idris
 }:
-
 build-idris-package  {
   name = "extras";
   version = "2018-03-06";
 
-  idrisDeps = [ prelude contrib ];
+  idrisDeps = [ contrib ];
 
   src = fetchFromGitHub {
     owner = "jheiling";
@@ -21,9 +18,8 @@ build-idris-package  {
 
   meta = {
     description = "Some useful functions for Idris";
-    homepage = https://github.com/jheiling/idris-extras;
+    homepage = "https://github.com/jheiling/idris-extras";
     license = lib.licenses.unlicense;
     maintainers = [ lib.maintainers.brainrape ];
-    inherit (idris.meta) platforms;
   };
 }

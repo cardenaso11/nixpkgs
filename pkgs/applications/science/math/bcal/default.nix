@@ -1,21 +1,24 @@
-{ stdenv, fetchFromGitHub, python3Packages }:
+{ lib, stdenv, fetchFromGitHub, python3Packages, readline, bc }:
 
-with stdenv.lib;
+with lib;
 
 stdenv.mkDerivation rec {
-  name = "bcal-${version}";
-  version = "1.8";
+  pname = "bcal";
+  version = "2.2";
 
   src = fetchFromGitHub {
     owner = "jarun";
     repo = "bcal";
     rev = "v${version}";
-    sha256 = "0jdn46wzwq7yn3x6p1xyqarp52pcr0ghnfhkm7nyxv734g1abw7r";
+    sha256 = "4vR5rcbNkoEdSRNoMH9qMHP3iWFxejkVfXNiYfwbo/A=";
   };
 
   nativeBuildInputs = [ python3Packages.pytest ];
 
+  buildInputs = [ readline ];
+
   doCheck = true;
+  checkInputs = [ bc ];
   checkPhase = ''
     python3 -m pytest test.py
   '';
@@ -24,8 +27,8 @@ stdenv.mkDerivation rec {
 
   meta = {
     description = "Storage conversion and expression calculator";
-    homepage = https://github.com/jarun/bcal;
-    license = licenses.gpl3;
+    homepage = "https://github.com/jarun/bcal";
+    license = licenses.gpl3Only;
     platforms = [ "aarch64-linux" "x86_64-darwin" "x86_64-linux" ];
     maintainers = with maintainers; [ jfrankenau ];
   };

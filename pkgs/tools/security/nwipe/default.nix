@@ -1,20 +1,20 @@
-{ stdenv, fetchFromGitHub, ncurses, parted, automake, autoconf, pkgconfig }:
+{ lib, stdenv, fetchFromGitHub, ncurses, parted, automake, autoconf, pkg-config }:
 
 stdenv.mkDerivation rec {
-  version = "0.24";
-  name = "nwipe-${version}";
+  version = "0.28";
+  pname = "nwipe";
   src = fetchFromGitHub {
     owner = "martijnvanbrummelen";
     repo = "nwipe";
     rev = "v${version}";
-    sha256 = "0zminjngz98b4jl1ii6ssa7pkmf4xw6mmk8apxz3xr68cps12ls0";
+    sha256 = "1aw905lmn1vm6klqn3q7445dwmwbjhcmwnkygpq9rddacgig1gdx";
   };
-  nativeBuildInputs = [ automake autoconf pkgconfig ];
+  nativeBuildInputs = [ automake autoconf pkg-config ];
   buildInputs = [ ncurses parted ];
   preConfigure = "sh init.sh || :";
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Securely erase disks";
-    homepage = https://github.com/martijnvanbrummelen/nwipe;
+    homepage = "https://github.com/martijnvanbrummelen/nwipe";
     license = licenses.gpl2;
     maintainers = [ maintainers.woffs ];
     platforms = platforms.linux;

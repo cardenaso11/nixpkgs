@@ -10,22 +10,20 @@ in
   ###### interface
 
   options = {
-    services.owamp.enable = mkEnableOption ''Enable OWAMP server'';
+    services.owamp.enable = mkEnableOption "Enable OWAMP server";
   };
 
 
   ###### implementation
 
   config = mkIf cfg.enable {
-    users.extraUsers = singleton {
-      name = "owamp";
+    users.users.owamp = {
       group = "owamp";
       description = "Owamp daemon";
+      isSystemUser = true;
     };
 
-    users.extraGroups = singleton {
-      name = "owamp";
-    };
+    users.groups.owamp = { };
 
     systemd.services.owamp = {
       description = "Owamp server";

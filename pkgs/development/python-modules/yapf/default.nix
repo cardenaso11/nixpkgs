@@ -1,16 +1,15 @@
-{ stdenv, buildPythonPackage, fetchPypi }:
+{ lib, buildPythonPackage, fetchPypi }:
 
 buildPythonPackage rec {
   pname = "yapf";
-  version = "0.22.0";
-  name = "${pname}-${version}";
+  version = "0.30.0";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "a98a6eacca64d2b920558f4a2f78150db9474de821227e60deaa29f186121c63";
+    sha256 = "3000abee4c28daebad55da6c85f3cd07b8062ce48e2e9943c8da1b9667d48427";
   };
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A formatter for Python code.";
     homepage    = "https://github.com/google/yapf";
     license     = licenses.asl20;

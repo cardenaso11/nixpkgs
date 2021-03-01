@@ -8,7 +8,6 @@
 buildPythonPackage rec {
   pname = "requests_ntlm";
   version = "1.1.0";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -22,7 +21,7 @@ buildPythonPackage rec {
 
   meta = with lib; {
     description = "HTTP NTLM authentication support for python-requests";
-    homepage = https://github.com/requests/requests-ntlm;
+    homepage = "https://github.com/requests/requests-ntlm";
     license = licenses.isc;
     maintainers = with maintainers; [ elasticdog ];
     platforms = platforms.all;

@@ -1,15 +1,14 @@
 { build-idris-package
 , fetchFromGitHub
-, prelude
 , contrib
 , lib
-, idris
 }:
 build-idris-package  {
   name = "snippets";
   version = "2018-03-17";
 
-  idrisDeps = [ prelude contrib ];
+  ipkgName = "idris-snippets";
+  idrisDeps = [ contrib ];
 
   src = fetchFromGitHub {
     owner = "palladin";
@@ -20,9 +19,8 @@ build-idris-package  {
 
   meta = {
     description = "Collection of Idris snippets";
-    homepage = https://github.com/palladin/idris-snippets;
+    homepage = "https://github.com/palladin/idris-snippets";
     license = lib.licenses.mit;
     maintainers = [ lib.maintainers.brainrape ];
-    inherit (idris.meta) platforms;
   };
 }

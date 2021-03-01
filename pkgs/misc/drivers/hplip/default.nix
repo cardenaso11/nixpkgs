@@ -1,26 +1,29 @@
-{ stdenv, fetchurl, substituteAll
-, pkgconfig
-, makeWrapper
-, cups, zlib, libjpeg, libusb1, pythonPackages, sane-backends, dbus, usbutils
-, net_snmp, openssl, polkit, nettools
-, bash, coreutils, utillinux
+{ lib, stdenv, fetchurl, substituteAll
+, pkg-config
+, cups, zlib, libjpeg, libusb1, python3Packages, sane-backends
+, dbus, file, ghostscript, usbutils
+, net-snmp, openssl, perl, nettools, avahi
+, bash, coreutils, util-linux
+# To remove references to gcc-unwrapped
+, removeReferencesTo, qt5
 , withQt5 ? true
 , withPlugin ? false
+, withStaticPPDInstall ? false
 }:
 
 let
 
-  name = "hplip-${version}";
-  version = "3.18.3";
+  pname = "hplip";
+  version = "3.20.11";
 
   src = fetchurl {
-    url = "mirror://sourceforge/hplip/${name}.tar.gz";
-    sha256 = "0x5xs86v18w46rxz5whc15bl4fb7p4km6xqjpwzclp83nl7rl01y";
+    url = "mirror://sourceforge/hplip/${pname}-${version}.tar.gz";
+    sha256 = "CxZ1s9jnCaEyX+hj9arOO9NxB3mnPq6Gj3su6aVv2xE=";
   };
 
   plugin = fetchurl {
-    url = "https://www.openprinting.org/download/printdriver/auxfiles/HP/plugins/${name}-plugin.run";
-    sha256 = "11nc3cifhd2h2c7p0dr2jjzrg3fd5j43ih1wy0m186l6wcgdjssw";
+    url = "https://developers.hp.com/sites/default/files/${pname}-${version}-plugin.run";
+    sha256 = "r8PoQQFfjdHKySPCFwtDR8Tl6v5Eag9gXpBAp6sCF9Q=";
   };
 
   hplipState = substituteAll {
@@ -29,24 +32,25 @@ let
   };
 
   hplipPlatforms = {
-    "i686-linux"   = "x86_32";
-    "x86_64-linux" = "x86_64";
-    "armv6l-linux" = "arm32";
-    "armv7l-linux" = "arm32";
+    i686-linux   = "x86_32";
+    x86_64-linux = "x86_64";
+    armv6l-linux = "arm32";
+    armv7l-linux = "arm32";
+    aarch64-linux = "aarch64";
   };
 
-  hplipArch = hplipPlatforms."${stdenv.system}"
-    or (throw "HPLIP not supported on ${stdenv.system}");
+  hplipArch = hplipPlatforms.${stdenv.hostPlatform.system}
+    or (throw "HPLIP not supported on ${stdenv.hostPlatform.system}");
 
-  pluginArches = [ "x86_32" "x86_64" "arm32" ];
+  pluginArches = [ "x86_32" "x86_64" "arm32" "aarch64" ];
 
 in
 
 assert withPlugin -> builtins.elem hplipArch pluginArches
-  || throw "HPLIP plugin not supported on ${stdenv.system}";
+  || throw "HPLIP plugin not supported on ${stdenv.hostPlatform.system}";
 
-pythonPackages.buildPythonApplication {
-  inherit name src;
+python3Packages.buildPythonApplication {
+  inherit pname version src;
   format = "other";
 
   buildInputs = [
@@ -55,27 +59,47 @@ pythonPackages.buildPythonApplication {
     libusb1
     sane-backends
     dbus
-    net_snmp
+    file
+    ghostscript
+    net-snmp
     openssl
+    perl
     zlib
+    avahi
   ];
 
   nativeBuildInputs = [
-    pkgconfig
-  ];
+    pkg-config
+    removeReferencesTo
+  ] ++ lib.optional withQt5 qt5.wrapQtAppsHook;
 
-  pythonPath = with pythonPackages; [
+  pythonPath = with python3Packages; [
     dbus
     pillow
-    pygobject2
+    pygobject3
     reportlab
     usbutils
     sip
-  ] ++ stdenv.lib.optionals withQt5 [
+    dbus-python
+  ] ++ lib.optionals withQt5 [
     pyqt5
+    enum-compat
   ];
 
   makeWrapperArgs = [ "--prefix" "PATH" ":" "${nettools}/bin" ];
+
+  patches = [
+    # remove ImageProcessor usage, it causes segfaults, see
+    # https://bugs.launchpad.net/hplip/+bug/1788706
+    # https://bugs.launchpad.net/hplip/+bug/1787289
+    ./image-processor.patch
+
+    # HPLIP's getSystemPPDs() function relies on searching for PPDs below common FHS
+    # paths, and hp-setup crashes if none of these paths actually exist (which they
+    # don't on NixOS).  Add the equivalent NixOS path, /var/lib/cups/path/share.
+    # See: https://github.com/NixOS/nixpkgs/issues/21796
+    ./hplip-3.20.11-nixos-cups-ppd-search-path.patch
+  ];
 
   prePatch = ''
     # HPLIP hardcodes absolute paths everywhere. Nuke from orbit.
@@ -86,6 +110,11 @@ pythonPackages.buildPythonApplication {
       -e s,/usr/share/hal/fdi/preprobe/10osvendor,$out/share/hal/fdi/preprobe/10osvendor,g \
       -e s,/usr/lib/systemd/system,$out/lib/systemd/system,g \
       -e s,/var/lib/hp,$out/var/lib/hp,g \
+      -e s,/usr/bin/perl,${perl}/bin/perl,g \
+      -e s,/usr/bin/file,${file}/bin/file,g \
+      -e s,/usr/bin/gs,${ghostscript}/bin/gs,g \
+      -e s,/usr/share/cups/fonts,${ghostscript}/share/ghostscript/fonts,g \
+      -e "s,ExecStart=/usr/bin/python /usr/bin/hp-config_usb_printer,ExecStart=$out/bin/hp-config_usb_printer,g" \
       {} +
   '';
 
@@ -98,8 +127,9 @@ pythonPackages.buildPythonApplication {
       --with-systraydir=$out/xdg/autostart
       --with-mimedir=$out/etc/cups
       --enable-policykit
+      ${lib.optionalString withStaticPPDInstall "--enable-cups-ppd-install"}
       --disable-qt4
-      ${stdenv.lib.optionalString withQt5 "--enable-qt5"}
+      ${lib.optionalString withQt5 "--enable-qt5"}
     "
 
     export makeFlags="
@@ -111,11 +141,21 @@ pythonPackages.buildPythonApplication {
       hplip_confdir=$out/etc/hp
       hplip_statedir=$out/var/lib/hp
     "
+
+    # Prevent 'ppdc: Unable to find include file "<font.defs>"' which prevent
+    # generation of '*.ppd' files.
+    # This seems to be a 'ppdc' issue when the tool is run in a hermetic sandbox.
+    # Could not find how to fix the problem in 'ppdc' so this is a workaround.
+    export CUPS_DATADIR="${cups}/share/cups"
   '';
 
   enableParallelBuilding = true;
 
-  postInstall = stdenv.lib.optionalString withPlugin ''
+  #
+  # Running `hp-diagnose_plugin -g` can be used to diagnose
+  # issues with plugins.
+  #
+  postInstall = lib.optionalString withPlugin ''
     sh ${plugin} --noexec --keep
     cd plugin_tmp
 
@@ -130,21 +170,29 @@ pythonPackages.buildPythonApplication {
     mkdir -p $out/share/hplip/prnt/plugins
     for plugin in lj hbpl1; do
       cp $plugin-${hplipArch}.so $out/share/hplip/prnt/plugins
+      chmod 0755 $out/share/hplip/prnt/plugins/$plugin-${hplipArch}.so
       ln -s $out/share/hplip/prnt/plugins/$plugin-${hplipArch}.so \
         $out/share/hplip/prnt/plugins/$plugin.so
     done
 
     mkdir -p $out/share/hplip/scan/plugins
-    for plugin in bb_soap bb_marvell bb_soapht fax_marvell; do
+    for plugin in bb_soap bb_marvell bb_soapht bb_escl; do
       cp $plugin-${hplipArch}.so $out/share/hplip/scan/plugins
+      chmod 0755 $out/share/hplip/scan/plugins/$plugin-${hplipArch}.so
       ln -s $out/share/hplip/scan/plugins/$plugin-${hplipArch}.so \
         $out/share/hplip/scan/plugins/$plugin.so
     done
 
+    mkdir -p $out/share/hplip/fax/plugins
+    for plugin in fax_marvell; do
+      cp $plugin-${hplipArch}.so $out/share/hplip/fax/plugins
+      chmod 0755 $out/share/hplip/fax/plugins/$plugin-${hplipArch}.so
+      ln -s $out/share/hplip/fax/plugins/$plugin-${hplipArch}.so \
+        $out/share/hplip/fax/plugins/$plugin.so
+    done
+
     mkdir -p $out/var/lib/hp
     cp ${hplipState} $out/var/lib/hp/hplip.state
-
-    rm $out/etc/udev/rules.d/56-hpmud.rules
   '';
 
   # The installed executables are just symlinks into $out/share/hplip,
@@ -172,23 +220,34 @@ pythonPackages.buildPythonApplication {
 
   postFixup = ''
     substituteInPlace $out/etc/hp/hplip.conf --replace /usr $out
-  '' + stdenv.lib.optionalString (!withPlugin) ''
-    # A udev rule to notify users that they need the binary plugin.
-    # Needs a lot of patching but might save someone a bit of confusion:
+    # Patch udev rules:
+    # with plugin, they upload firmware to printers,
+    # without plugin, they complain about the missing plugin.
     substituteInPlace $out/etc/udev/rules.d/56-hpmud.rules \
       --replace {,${bash}}/bin/sh \
-      --replace {/usr,${coreutils}}/bin/nohup \
-      --replace {,${utillinux}/bin/}logger \
+      --replace /usr/bin/nohup "" \
+      --replace {,${util-linux}/bin/}logger \
       --replace {/usr,$out}/bin
+    remove-references-to -t ${stdenv.cc.cc} $(readlink -f $out/lib/*.so)
+  '' + lib.optionalString withQt5 ''
+    for f in $out/bin/hp-*;do
+      wrapQtApp $f
+    done
   '';
 
-  meta = with stdenv.lib; {
+  # There are some binaries there, which reference gcc-unwrapped otherwise.
+  stripDebugList = [
+    "share/hplip" "lib/cups/backend" "lib/cups/filter" python3Packages.python.sitePackages "lib/sane"
+  ];
+
+  meta = with lib; {
     description = "Print, scan and fax HP drivers for Linux";
-    homepage = https://developers.hp.com/hp-linux-imaging-and-printing;
+    homepage = "https://developers.hp.com/hp-linux-imaging-and-printing";
+    downloadPage = "https://sourceforge.net/projects/hplip/files/hplip/";
     license = if withPlugin
       then licenses.unfree
       else with licenses; [ mit bsd2 gpl2Plus ];
-    platforms = [ "i686-linux" "x86_64-linux" "armv6l-linux" "armv7l-linux" ];
-    maintainers = with maintainers; [ jgeerds ttuegel ];
+    platforms = [ "i686-linux" "x86_64-linux" "armv6l-linux" "armv7l-linux" "aarch64-linux" ];
+    maintainers = with maintainers; [ ttuegel ];
   };
 }

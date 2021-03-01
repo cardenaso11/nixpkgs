@@ -1,34 +1,60 @@
-{ lib
-, buildPythonPackage
-, fetchPypi
-, python
-, nose2
-, proj ? null
+{ lib, buildPythonPackage, fetchFromGitHub, python, pkgs, pythonOlder, isPy27, substituteAll
+, aenum
+, cython
+, pytestCheckHook
+, mock
+, numpy
+, shapely
 }:
 
-buildPythonPackage (rec {
+buildPythonPackage rec {
   pname = "pyproj";
-  version = "1.9.5.1";
-  name = "${pname}-${version}";
+  version = "2.6.0";
+  disabled = isPy27;
 
-  src = fetchPypi {
-    inherit pname version;
-    sha256 = "53fa54c8fa8a1dfcd6af4bf09ce1aae5d4d949da63b90570ac5ec849efaf3ea8";
+  src = fetchFromGitHub {
+    owner = "pyproj4";
+    repo = "pyproj";
+    rev = "v${version}rel";
+    sha256 = "0fyggkbr3kp8mlq4c0r8sl5ah58bdg2mj4kzql9p3qyrkcdlgixh";
   };
 
-  buildInputs = [ nose2 ];
+  # force pyproj to use ${pkgs.proj}
+  patches = [
+    (substituteAll {
+      src = ./001.proj.patch;
+      proj = pkgs.proj;
+      projdev = pkgs.proj.dev;
+    })
+  ];
 
-  checkPhase = ''
-    runHook preCheck
-    pushd unittest  # changing directory should ensure we're importing the global pyproj
-    ${python.interpreter} test.py && ${python.interpreter} -c "import doctest, pyproj, sys; sys.exit(doctest.testmod(pyproj)[0])"
-    popd
-    runHook postCheck
-  '';
+  buildInputs = [ cython pkgs.proj ];
+
+  propagatedBuildInputs = [
+    numpy shapely
+  ] ++ lib.optional (pythonOlder "3.6") aenum;
+
+  checkInputs = [ pytestCheckHook mock ];
+
+  # prevent importing local directory
+  preCheck = "cd test";
+  pytestFlagsArray = [
+    "--ignore=test_doctest_wrapper.py"
+    "--ignore=test_datadir.py"
+  ];
+
+  disabledTests = [
+    "alternative_grid_name"
+    "transform_wgs84_to_alaska"
+    "transformer_group__unavailable"
+    "transform_group__missing_best"
+    "datum"
+    "repr"
+  ];
 
   meta = {
     description = "Python interface to PROJ.4 library";
-    homepage = https://github.com/jswhit/pyproj;
+    homepage = "https://github.com/jswhit/pyproj";
     license = with lib.licenses; [ isc ];
   };
-} // (if proj == null then {} else { PROJ_DIR = proj; }))
+}

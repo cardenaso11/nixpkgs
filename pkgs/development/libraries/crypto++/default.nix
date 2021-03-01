@@ -1,54 +1,53 @@
-{ fetchurl, fetchFromGitHub, stdenv }:
+{ lib, stdenv, fetchFromGitHub, nasm, which
+, enableStatic ? stdenv.hostPlatform.isStatic
+, enableShared ? !enableStatic
+}:
 
 stdenv.mkDerivation rec {
-  name = "crypto++-${version}";
-  majorVersion = "5.6";
-  version = "${majorVersion}.5";
+  pname = "crypto++";
+  version = "8.4.0";
+  underscoredVersion = lib.strings.replaceStrings ["."] ["_"] version;
 
   src = fetchFromGitHub {
     owner = "weidai11";
     repo = "cryptopp";
-    rev = "CRYPTOPP_5_6_5";
-    sha256 = "1yk7jyf4va9425cg05llskpls2jm7n3jwy2hj5jm74zkr4mwpvl7";
+    rev = "CRYPTOPP_${underscoredVersion}";
+    sha256 = "1gwn8yh1mh41hkh6sgnhb9c3ygrdazd7645msl20i0zdvcp7f5w3";
   };
 
-  patches = with stdenv;
-    lib.optional (system != "i686-cygwin") ./dll.patch
-    ++ lib.optional isDarwin ./GNUmakefile-darwin.patch;
+  outputs = [ "out" "dev" ];
 
-
-  configurePhase = let
-    marchflags =
-      if stdenv.isi686 then "-march=i686" else
-      if stdenv.isx86_64 then "-march=nocona -mtune=generic" else
-      "";
-    in
-    ''
-      sed -i GNUmakefile \
-        -e 's|-march=native|${marchflags} -fPIC|g' \
-        -e '/^CXXFLAGS =/s|-g ||'
-    '';
-
-  enableParallelBuilding = true;
-
-  makeFlags = [ "PREFIX=$(out)" ];
-  buildFlags = [ "libcryptopp.so" ];
-  installFlags = [ "LDCONF=true" ];
-
-  doCheck = true;
-  checkPhase = "LD_LIBRARY_PATH=`pwd` make test";
-
-  # prefer -fPIC and .so to .a; cryptotest.exe seems superfluous
-  postInstall = ''
-    rm "$out"/lib/*.a -r "$out/bin"
-    ln -sf "$out"/lib/libcryptopp.so.${version} "$out"/lib/libcryptopp.so.${majorVersion}
+  postPatch = ''
+    substituteInPlace GNUmakefile \
+        --replace "AR = libtool" "AR = ar" \
+        --replace "ARFLAGS = -static -o" "ARFLAGS = -cru"
   '';
 
-  meta = with stdenv.lib; {
+  makeFlags = [ "PREFIX=${placeholder "out"}" ];
+  buildFlags =
+       lib.optional enableStatic "static"
+    ++ lib.optional enableShared "shared"
+    ++ [ "libcryptopp.pc" ];
+  enableParallelBuilding = true;
+
+  doCheck = true;
+
+  # built for checks but we don't install static lib into the nix store
+  preInstall = lib.optionalString (!enableStatic) "rm libcryptopp.a";
+
+  installTargets = [ "install-lib" ];
+  installFlags = [ "LDCONF=true" ];
+  postInstall = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
+    ln -sr $out/lib/libcryptopp.so.${version} $out/lib/libcryptopp.so.${lib.versions.majorMinor version}
+    ln -sr $out/lib/libcryptopp.so.${version} $out/lib/libcryptopp.so.${lib.versions.major version}
+  '';
+
+  meta = {
     description = "Crypto++, a free C++ class library of cryptographic schemes";
-    homepage = http://cryptopp.com/;
-    license = licenses.boost;
-    platforms = platforms.all;
-    maintainers = [ ];
+    homepage = "https://cryptopp.com/";
+    changelog = "https://raw.githubusercontent.com/weidai11/cryptopp/CRYPTOPP_${underscoredVersion}/History.txt";
+    license = with lib.licenses; [ boost publicDomain ];
+    platforms = lib.platforms.all;
+    maintainers = with lib.maintainers; [ c0bw3b ];
   };
 }

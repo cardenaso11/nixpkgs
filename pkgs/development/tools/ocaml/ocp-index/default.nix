@@ -1,45 +1,24 @@
-{ stdenv, fetchFromGitHub, fetchpatch, ocaml, findlib, ocpBuild, ocpIndent, opam, cmdliner, ncurses, re, lambdaTerm, libev }:
+{ lib, fetchzip, buildDunePackage, cppo, ocp-indent, cmdliner, re }:
 
-let inherit (stdenv.lib) getVersion versionAtLeast optional; in
+buildDunePackage rec {
+  pname = "ocp-index";
+  version = "1.2.2";
 
-assert versionAtLeast (getVersion ocaml) "4";
-assert versionAtLeast (getVersion ocpBuild) "1.99.13-beta";
-assert versionAtLeast (getVersion ocpIndent) "1.4.2";
+  useDune2 = true;
 
-let
-  version = "1.1.5";
-in
-
-stdenv.mkDerivation {
-
-  name = "ocp-index-${version}";
-
-  src = fetchFromGitHub {
-    owner = "OCamlPro";
-    repo = "ocp-index";
-    rev = version;
-    sha256 = "0gir0fm8mq609371kmwpsqfvpfx2b26ax3f9rg5fjf5r0bjk9pqd";
+  src = fetchzip {
+    url = "https://github.com/OCamlPro/ocp-index/archive/${version}.tar.gz";
+    sha256 = "0k4i0aabyn750f4wqbnk0yv10kdjd6nhjw2pbmpc4cz639qcsm40";
   };
 
-  patches = [ (fetchpatch {
-    url = https://github.com/OCamlPro/ocp-index/commit/618872a0980d077857a63d502eadbbf0d1b05c0f.diff;
-    sha256 = "07snnydczkzapradh1c22ggv9vaff67nc36pi3218azb87mb1p7z";
-  }) ];
+  buildInputs = [ cppo cmdliner re ];
 
-  buildInputs = [ ocaml findlib ocpBuild opam cmdliner ncurses re libev ]
-  ++ optional (versionAtLeast (getVersion lambdaTerm) "1.7") lambdaTerm;
-  propagatedBuildInputs = [ ocpIndent ];
-
-  createFindlibDestdir = true;
-
-  preBuild = "export TERM=xterm";
-  postInstall = "mv $out/lib/{ocp-index,ocaml/${getVersion ocaml}/site-lib/}";
+  propagatedBuildInputs = [ ocp-indent ];
 
   meta = {
-    homepage = http://typerex.ocamlpro.com/ocp-index.html;
+    homepage = "https://www.typerex.org/ocp-index.html";
     description = "A simple and light-weight documentation extractor for OCaml";
-    license = stdenv.lib.licenses.lgpl3;
-    platforms = ocaml.meta.platforms or [];
-    maintainers = with stdenv.lib.maintainers; [ vbgl ];
+    license = lib.licenses.lgpl3;
+    maintainers = with lib.maintainers; [ vbgl ];
   };
 }

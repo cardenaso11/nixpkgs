@@ -1,9 +1,9 @@
-{ config, pkgs, ... }:
+{ ... }:
 
 {
   imports = [ ./graphical.nix ];
 
-  users.extraUsers.demo =
+  users.users.demo =
     { isNormalUser = true;
       description = "Demo user account";
       extraGroups = [ "wheel" ];
@@ -11,9 +11,11 @@
       uid = 1000;
     };
 
-  services.xserver.displayManager.sddm.autoLogin = {
-    enable = true;
-    relogin = true;
-    user = "demo";
+  services.xserver.displayManager = {
+    autoLogin = {
+      enable = true;
+      user = "demo";
+    };
+    sddm.autoLogin.relogin = true;
   };
 }

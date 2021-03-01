@@ -1,15 +1,15 @@
-{ stdenv, fetchFromGitHub, perl, icmake, utillinux }:
+{ lib, stdenv, fetchFromGitLab, perl, icmake, util-linux }:
 
 stdenv.mkDerivation rec {
-  name = "yodl-${version}";
-  version = "4.02.00";
+  pname = "yodl";
+  version = "4.02.02";
 
   nativeBuildInputs = [ icmake ];
 
   buildInputs = [ perl ];
 
-  src = fetchFromGitHub {
-    sha256 = "08i3q3h581kxr5v7wi114bng66pwwsjs5qj3ywnnrr7ra1h5rzwa";
+  src = fetchFromGitLab {
+    sha256 = "1kf4h99p9i35fgas8z5wdy2qpd7gqfd645b5z7mfssjzsfdrv745";
     rev = version;
     repo = "yodl";
     owner = "fbb-git";
@@ -24,7 +24,7 @@ stdenv.mkDerivation rec {
     patchShebangs scripts/
     substituteInPlace INSTALL.im --replace /usr $out
     substituteInPlace macros/rawmacros/startdoc.pl --replace /usr/bin/perl ${perl}/bin/perl
-    substituteInPlace scripts/yodl2whatever.in --replace getopt ${utillinux}/bin/getopt
+    substituteInPlace scripts/yodl2whatever.in --replace getopt ${util-linux}/bin/getopt
   '';
 
   # Set TERM because icmbuild calls tput.
@@ -42,9 +42,9 @@ stdenv.mkDerivation rec {
     ./build install man
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A package that implements a pre-document language and tools to process it";
-    homepage = https://fbb-git.github.io/yodl/;
+    homepage = "https://fbb-git.gitlab.io/yodl/";
     license = licenses.gpl3;
     maintainers = with maintainers; [ pSub ];
     platforms = platforms.linux;

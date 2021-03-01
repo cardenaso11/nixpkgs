@@ -1,15 +1,15 @@
-{ stdenv, fetchFromGitHub, fetchpatch,
+{ lib, stdenv, fetchFromGitHub,
   bzip2, nix, perl, perlPackages,
 }:
 
-with stdenv.lib;
+with lib;
 
 let
   rev = "e4675e38ab54942e351c7686e40fabec822120b9";
   sha256 = "1wm24p6pkxl1d7hrvf4ph6mwzawvqi22c60z9xzndn5xfyr4v0yr";
 in
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   name = "nix-serve-0.2-${substring 0 7 rev}";
 
   src = fetchFromGitHub {
@@ -36,10 +36,10 @@ stdenv.mkDerivation rec {
   '';
 
   meta = {
-    homepage = https://github.com/edolstra/nix-serve;
+    homepage = "https://github.com/edolstra/nix-serve";
     description = "A utility for sharing a Nix store as a binary cache";
     maintainers = [ maintainers.eelco ];
-    license = licenses.gpl3;
+    license = licenses.lgpl21;
     platforms = nix.meta.platforms;
   };
 }

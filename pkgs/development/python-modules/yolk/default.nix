@@ -4,7 +4,6 @@ with lib;
 
 buildPythonApplication rec {
   pname = "yolk";
-  name = "${pname}-${version}";
   version = "0.4.3";
 
   src = fetchurl {
@@ -16,7 +15,7 @@ buildPythonApplication rec {
 
   meta = {
     description = "Command-line tool for querying PyPI and Python packages installed on your system";
-    homepage = https://github.com/cakebread/yolk;
+    homepage = "https://github.com/cakebread/yolk";
     maintainers = with maintainers; [];
     license = licenses.bsd3;
   };

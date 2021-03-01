@@ -1,32 +1,42 @@
-{ stdenv, fetchurl, buildPythonPackage, pkgconfig, pytest, fuse, attr, which
-, contextlib2
+{ lib, stdenv, fetchPypi, fetchpatch, buildPythonPackage, pkg-config, pytest, fuse, attr, which
+, contextlib2, osxfuse
 }:
 
 buildPythonPackage rec {
   pname = "llfuse";
-  version = "1.3.4";
-  name = pname + "-" + version;
+  version = "1.3.8";
 
-  src = fetchurl {
-    url = "mirror://pypi/l/llfuse/${name}.tar.bz2";
-    sha256 = "50396c5f3c49c3145e696e5b62df4fcca8b66634788020fba7b6932a858c78c2";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "1g2cdhdqrb6m7655qp61pn61pwj1ql61cdzhr2jvl3w4i8877ddr";
   };
 
-  nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ pytest fuse attr which ];
+  patches = [
+    # fix tests with pytest 6
+    (fetchpatch {
+      url = "https://github.com/python-llfuse/python-llfuse/commit/1ed8b280d2544eedf8bf209761bef0d2519edd17.diff";
+      sha256 = "0wailfrr1i0n2m9ylwpr00jh79s7z3l36w7x19jx1x4djcz2hdps";
+    })
+  ];
+
+  nativeBuildInputs = [ pkg-config ];
+
+  buildInputs =
+    lib.optionals stdenv.isLinux [ fuse ]
+    ++ lib.optionals stdenv.isDarwin [ osxfuse ];
+
+  checkInputs = [ pytest which ] ++
+    lib.optionals stdenv.isLinux [ attr ];
 
   propagatedBuildInputs = [ contextlib2 ];
 
   checkPhase = ''
-    py.test
+    py.test -k "not test_listdir" ${lib.optionalString stdenv.isDarwin ''-m "not uses_fuse"''}
   '';
 
-  # FileNotFoundError: [Errno 2] No such file or directory: '/usr/bin'
-  doCheck = false;
-
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Python bindings for the low-level FUSE API";
-    homepage = https://code.google.com/p/python-llfuse/;
+    homepage = "https://github.com/python-llfuse/python-llfuse";
     license = licenses.lgpl2Plus;
     platforms = platforms.unix;
     maintainers = with maintainers; [ bjornfor ];

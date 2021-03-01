@@ -1,12 +1,12 @@
 { lib, buildPythonPackage, fetchPypi }:
 
 buildPythonPackage rec {
-  version = "1.6.2";
+  version = "1.8.1";
   pname = "pyperclip";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "43496f0a1f363a5ecfc4cda5eba6a2a3d5056fe6c7ffb9a99fbb1c5a3c7dea05";
+    sha256 = "9abef1e79ce635eb62309ecae02dfb5a3eb952fa7d6dce09c1aef063f81424d3";
   };
 
   doCheck = false;

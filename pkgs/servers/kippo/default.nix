@@ -25,7 +25,7 @@
 #
 # Use this package at your own risk.
 
-{stdenv, fetchurl, pythonPackages }:
+{lib, stdenv, fetchurl, pythonPackages }:
 
 let
 
@@ -48,8 +48,8 @@ let
     # details.
     postInstall = "$out/bin/twistd --help > /dev/null";
 
-    meta = with stdenv.lib; {
-      homepage = http://twistedmatrix.com/;
+    meta = with lib; {
+      homepage = "https://twistedmatrix.com/";
       description = "Twisted, an event-driven networking engine written in Python";
       longDescription = ''
         Twisted is an event-driven networking engine written in Python
@@ -60,10 +60,10 @@ let
   };
 
 in stdenv.mkDerivation rec {
-    name = "kippo-${version}";
+    pname = "kippo";
     version = "0.8";
     src = fetchurl {
-      url = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/kippo/${name}.tar.gz";
+      url = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/kippo/${pname}-${version}.tar.gz";
       sha256 = "0rd2mk36d02qd24z8s4xyy64fy54rzpar4379iq4dcjwg7l7f63d";
     };
     buildInputs = with pythonPackages; [ pycrypto pyasn1 twisted_13 ];
@@ -85,8 +85,8 @@ in stdenv.mkDerivation rec {
 
     passthru.twisted = twisted_13;
 
-    meta = with stdenv.lib; {
-      homepage = https://github.com/desaster/kippo;
+    meta = with lib; {
+      homepage = "https://github.com/desaster/kippo";
       description = "SSH Honeypot";
       longDescription = ''
         Default port is 2222. Recommend using something like this for port redirection to default SSH port:
@@ -95,5 +95,6 @@ in stdenv.mkDerivation rec {
       license = licenses.bsd3;
       platforms = platforms.linux;
       maintainers = with maintainers; [ tomberek ];
+      broken = true; # 2018-09-12, failed on hydra since 2017-12-11
     };
 }

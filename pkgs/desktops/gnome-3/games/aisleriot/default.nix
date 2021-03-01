@@ -1,30 +1,76 @@
-{ stdenv, fetchurl, pkgconfig, gnome3, intltool, itstool, gtk3
-, wrapGAppsHook, gconf, librsvg, libxml2, desktop-file-utils
-, guile_2_0, libcanberra-gtk3 }:
+{ lib, stdenv
+, fetchFromGitLab
+, pkg-config
+, gnome3
+, itstool
+, gtk3
+, wrapGAppsHook
+, meson
+, librsvg
+, libxml2
+, desktop-file-utils
+, pysolfc
+, guile
+, libcanberra-gtk3
+, ninja
+, appstream-glib
+, yelp-tools
+}:
 
 stdenv.mkDerivation rec {
-  name = "aisleriot-${version}";
-  version = "3.22.5";
+  pname = "aisleriot";
+  version = "3.22.13";
 
-  src = fetchurl {
-    url = "mirror://gnome/sources/aisleriot/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "0rl39psr5xi584310pyrgw36ini4wn7yr2m1q5118w3a3v1dkhzh";
+  src = fetchFromGitLab {
+    domain = "gitlab.gnome.org";
+    owner = "GNOME";
+    repo = pname;
+    rev = version;
+    sha256 = "05k84bbgrrxchxg08l1jjcz384kpjdmxd24g0wnf731aa9zcnp5k";
   };
+
+  nativeBuildInputs = [
+    wrapGAppsHook
+    meson
+    ninja
+    appstream-glib
+    pkg-config
+    itstool
+    libxml2
+    desktop-file-utils
+    yelp-tools
+  ];
+
+  buildInputs = [
+    gtk3
+    librsvg
+    guile
+    libcanberra-gtk3
+    pysolfc
+  ];
+
+  prePatch = ''
+    patchShebangs cards/meson_svgz.sh
+    patchShebangs data/meson_desktopfile.py
+    patchShebangs data/icons/meson_updateiconcache.py
+    patchShebangs src/lib/meson_compileschemas.py
+  '';
+
+  mesonFlags = [
+    "-Dtheme_kde=false"
+  ];
 
   passthru = {
-    updateScript = gnome3.updateScript { packageName = "aisleriot"; attrPath = "gnome3.aisleriot"; };
+    updateScript = gnome3.updateScript {
+      packageName = pname;
+      attrPath = "gnome3.${pname}";
+    };
   };
 
-  configureFlags = [ "--with-card-theme-formats=svg" ];
-
-  nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ intltool itstool gtk3 wrapGAppsHook gconf
-                  librsvg libxml2 desktop-file-utils guile_2_0 libcanberra-gtk3 ];
-
-  meta = with stdenv.lib; {
-    homepage = https://wiki.gnome.org/Apps/Aisleriot;
+  meta = with lib; {
+    homepage = "https://wiki.gnome.org/Apps/Aisleriot";
     description = "A collection of patience games written in guile scheme";
-    maintainers = gnome3.maintainers;
+    maintainers = teams.gnome.members;
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
   };

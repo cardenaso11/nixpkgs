@@ -1,21 +1,28 @@
-{ stdenv, fetchFromGitHub, rustPlatform }:
+{ lib, stdenv, fetchFromGitHub, rustPlatform, Security }:
 
 rustPlatform.buildRustPackage rec {
-  name = "rust-cbindgen-${version}";
-  version = "0.6.0";
+  pname = "rust-cbindgen";
+  version = "0.15.0";
 
   src = fetchFromGitHub {
     owner = "eqrion";
     repo = "cbindgen";
     rev = "v${version}";
-    sha256 = "0yzjbmdhhwbg551bm06xwwdjdm5kdqw37pgd7hals8qxb0dzmmh8";
+    sha256 = "19bwllrajks286wl4zc5axgh4m9qqxdnc5024c30hyk0xnjffd0c";
   };
 
-  cargoSha256 = "1ml4a7xp40l3bhfhpwdrwj3k99zhan9dzpkw71fa689xmv6pdj62";
+  cargoSha256 = "1lzzckzcgj496chbfd6lhwxcangv0krx8m5k2jwffnb9mfgac7hx";
 
-  meta = with stdenv.lib; {
+  buildInputs = lib.optional stdenv.isDarwin Security;
+
+  checkFlags = [
+    # https://github.com/eqrion/cbindgen/issues/338
+    "--skip test_expand"
+  ];
+
+  meta = with lib; {
     description = "A project for generating C bindings from Rust code";
-    homepage = https://github.com/eqrion/cbindgen;
+    homepage = "https://github.com/eqrion/cbindgen";
     license = licenses.mpl20;
     maintainers = with maintainers; [ jtojnar ];
   };

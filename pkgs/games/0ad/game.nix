@@ -1,7 +1,7 @@
-{ stdenv, lib, callPackage, perl, fetchurl, python2
-, pkgconfig, spidermonkey_38, boost, icu, libxml2, libpng, libsodium
+{ stdenv, lib, perl, fetchurl, python2
+, pkg-config, spidermonkey_38, boost, icu, libxml2, libpng, libsodium
 , libjpeg, zlib, curl, libogg, libvorbis, enet, miniupnpc
-, openal, libGLU_combined, xproto, libX11, libXcursor, nspr, SDL2
+, openal, libGLU, libGL, xorgproto, libX11, libXcursor, nspr, SDL2
 , gloox, nvidia-texture-tools
 , withEditor ? true, wxGTK ? null
 }:
@@ -9,44 +9,48 @@
 assert withEditor -> wxGTK != null;
 
 stdenv.mkDerivation rec {
-  name = "0ad-${version}";
-  version = "0.0.23";
+  pname = "0ad";
+  version = "0.0.23b";
 
   src = fetchurl {
     url = "http://releases.wildfiregames.com/0ad-${version}-alpha-unix-build.tar.xz";
-    sha256 = "0qz1sg4n5y766qwgi63drrrx6k17kk0rcnn9a4a9crllk2vf78fg";
+    sha256 = "0draa53xg69i5qhqym85658m45xhwkbiimaldj4sr3703rjgggq1";
   };
 
-  nativeBuildInputs = [ python2 perl pkgconfig ];
+  nativeBuildInputs = [ python2 perl pkg-config ];
 
   buildInputs = [
     spidermonkey_38 boost icu libxml2 libpng libjpeg
     zlib curl libogg libvorbis enet miniupnpc openal
-    libGLU_combined xproto libX11 libXcursor nspr SDL2 gloox
+    libGLU libGL xorgproto libX11 libXcursor nspr SDL2 gloox
     nvidia-texture-tools libsodium
   ] ++ lib.optional withEditor wxGTK;
 
-  NIX_CFLAGS_COMPILE = [
-    "-I${xproto}/include/X11"
+  NIX_CFLAGS_COMPILE = toString [
+    "-I${xorgproto}/include/X11"
     "-I${libX11.dev}/include/X11"
     "-I${libXcursor.dev}/include/X11"
     "-I${SDL2}/include/SDL2"
   ];
 
-  patches = [ ./rootdir_env.patch ];
-
-  postPatch = ''
-    sed -i 's/MOZJS_MINOR_VERSION/false \&\& MOZJS_MINOR_VERSION/' source/scriptinterface/ScriptTypes.h
-  '';
+  patches = [
+    ./rootdir_env.patch
+    # Fixes build with spidermonkey-38.8.0, includes the minor version check:
+    # https://src.fedoraproject.org/rpms/0ad/c/26dc1657f6e3c0ad9f1180ca38cd79b933ef0c8b
+    (fetchurl {
+      url = "https://src.fedoraproject.org/rpms/0ad/raw/26dc1657f6e3c0ad9f1180ca38cd79b933ef0c8b/f/0ad-mozjs-incompatible.patch";
+      sha256 = "1rzpaalcrzihsgvlk3nqd87n2kxjldlwvb3qp5fcd5ffzr6k90wa";
+    })
+  ];
 
   configurePhase = ''
     # Delete shipped libraries which we don't need.
     rm -rf libraries/source/{enet,miniupnpc,nvtt,spidermonkey}
 
-    # Workaround invalid pkgconfig name for mozjs
-    mkdir pkgconfig
-    ln -s ${spidermonkey_38}/lib/pkgconfig/* pkgconfig/mozjs-38.pc
-    PKG_CONFIG_PATH="$PWD/pkgconfig:$PKG_CONFIG_PATH"
+    # Workaround invalid pkg-config name for mozjs
+    mkdir pkg-config
+    ln -s ${spidermonkey_38}/lib/pkgconfig/* pkg-config/mozjs-38.pc
+    PKG_CONFIG_PATH="$PWD/pkg-config:$PKG_CONFIG_PATH"
 
     # Update Makefiles
     pushd build/workspaces
@@ -86,7 +90,7 @@ stdenv.mkDerivation rec {
     install -D build/resources/0ad.desktop $out/share/applications/0ad.desktop
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A free, open-source game of ancient warfare";
     homepage = "https://play0ad.com/";
     license = with licenses; [

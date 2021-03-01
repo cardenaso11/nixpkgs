@@ -1,36 +1,32 @@
-{ stdenv, fetchzip, pkgconfig, ncurses, libev, jbuilder
-, ocaml, findlib, camlp4, cppo
-, ocaml-migrate-parsetree, ppx_tools_versioned, result
+{ lib, fetchzip, pkg-config, ncurses, libev, buildDunePackage, ocaml
+, cppo, dune-configurator, ocaml-migrate-parsetree, ocplib-endian, result
+, mmap, seq
+, ocaml-syntax-shims
 }:
 
-stdenv.mkDerivation rec {
-  version = "3.3.0";
-  name = "ocaml${ocaml.version}-lwt-${version}";
+let inherit (lib) optional versionAtLeast; in
+
+buildDunePackage rec {
+  pname = "lwt";
+  version = "5.4.0";
+
+  useDune2 = true;
 
   src = fetchzip {
-    url = "https://github.com/ocsigen/lwt/archive/${version}.tar.gz";
-    sha256 = "0n87hcyl4svy0risj439wyfq6bl77qxq3nraqgdr1qbz5lskbq2j";
+    url = "https://github.com/ocsigen/${pname}/archive/${version}.tar.gz";
+    sha256 = "1ay1zgadnw19r9hl2awfjr22n37l7rzxd9v73pjbahavwm2ay65d";
   };
 
-  preConfigure = ''
-    ocaml src/util/configure.ml -use-libev true -use-camlp4 true
-  '';
-
-  nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ ncurses ocaml findlib jbuilder camlp4 cppo
-    ocaml-migrate-parsetree ppx_tools_versioned ];
-  propagatedBuildInputs = [ libev result ];
-
-  installPhase = ''
-    ocaml src/util/install_filter.ml
-    ${jbuilder.installPhase}
-  '';
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [ cppo dune-configurator ocaml-migrate-parsetree ]
+   ++ optional (!versionAtLeast ocaml.version "4.08") ocaml-syntax-shims
+   ++ optional (!versionAtLeast ocaml.version "4.07") ncurses;
+  propagatedBuildInputs = [ libev mmap ocplib-endian seq result ];
 
   meta = {
     homepage = "https://ocsigen.org/lwt/";
     description = "A cooperative threads library for OCaml";
-    maintainers = [ stdenv.lib.maintainers.vbgl ];
-    license = stdenv.lib.licenses.lgpl21;
-    inherit (ocaml.meta) platforms;
+    maintainers = [ lib.maintainers.vbgl ];
+    license = lib.licenses.mit;
   };
 }

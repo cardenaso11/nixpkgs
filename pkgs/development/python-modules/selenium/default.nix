@@ -1,9 +1,10 @@
 { lib
 , stdenv
-, fetchurl
+, fetchPypi
 , fetchFromGitHub
 , buildPythonPackage
 , geckodriver
+, urllib3
 , xorg
 }:
 
@@ -22,21 +23,20 @@ in
 
 buildPythonPackage rec {
   pname = "selenium";
-  version = "3.6.0";
-  name = pname + "-" + version;
+  version = "3.141.0";
 
-  src = fetchurl {
-    url = "mirror://pypi/s/selenium/${name}.tar.gz";
-    sha256 = "15qpvz0bdwjvpcj11fm0rw6r5inr66sqw89ww50l025sbhf04qwm";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "039hf9knvl4s3hp21bzwsp1g5ri9gxsh504dp48lc6nr1av35byy";
   };
 
   buildInputs = [xorg.libX11];
 
   propagatedBuildInputs = [
-    geckodriver
+    geckodriver urllib3
   ];
 
-  patchPhase = stdenv.lib.optionalString stdenv.isLinux ''
+  patchPhase = lib.optionalString stdenv.isLinux ''
     cp "${x_ignore_nofocus}/cpp/linux-specific/"* .
     substituteInPlace x_ignore_nofocus.c --replace "/usr/lib/libX11.so.6" "${xorg.libX11.out}/lib/libX11.so.6"
     cc -c -fPIC x_ignore_nofocus.c -o x_ignore_nofocus.o
@@ -49,7 +49,7 @@ buildPythonPackage rec {
 
   meta = with lib; {
     description = "The selenium package is used to automate web browser interaction from Python";
-    homepage = http://www.seleniumhq.org;
+    homepage = "http://www.seleniumhq.org";
     license = licenses.asl20;
     maintainers = with maintainers; [ jraygauthier ];
   };

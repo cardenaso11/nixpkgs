@@ -1,25 +1,37 @@
-{ stdenv, fetchurl, openssl, lzo, zlib, iproute, which, ronn }:
+{ lib, stdenv, buildPackages, fetchFromGitHub, openssl, lzo, zlib, iproute, ronn }:
 
 stdenv.mkDerivation rec {
-  version = "1.2.10";
-  name = "zerotierone-${version}";
+  pname = "zerotierone";
+  version = "1.6.4";
 
-  src = fetchurl {
-    url = "https://github.com/zerotier/ZeroTierOne/archive/${version}.tar.gz";
-    sha256 = "0mqckh51xj79z468n2683liczqracip36jvhfyd0fr3pwrbyqy8w";
+  src = fetchFromGitHub {
+    owner = "zerotier";
+    repo = "ZeroTierOne";
+    rev = version;
+    sha256 = "06b6k1rzqkd7cdl7n0gz5ky48fs2nhn0q2qxx1rww38vbfc7lpmf";
   };
 
   preConfigure = ''
-      substituteInPlace ./osdep/LinuxEthernetTap.cpp \
-        --replace 'execlp("ip",' 'execlp("${iproute}/bin/ip",'
-
       patchShebangs ./doc/build.sh
       substituteInPlace ./doc/build.sh \
-        --replace '/usr/bin/ronn' '${ronn}/bin/ronn' \
-        --replace 'ronn -r' '${ronn}/bin/ronn -r'
+        --replace '/usr/bin/ronn' '${buildPackages.ronn}/bin/ronn' \
+
+      substituteInPlace ./make-linux.mk \
+        --replace 'armv5' 'armv6'
   '';
 
-  buildInputs = [ openssl lzo zlib iproute which ronn ];
+
+  nativeBuildInputs = [ ronn ];
+  buildInputs = [ openssl lzo zlib iproute ];
+
+  enableParallelBuilding = true;
+
+  buildFlags = [ "all" "selftest" ];
+
+  doCheck = stdenv.hostPlatform == stdenv.buildPlatform;
+  checkPhase = ''
+    ./zerotier-selftest
+  '';
 
   installPhase = ''
     install -Dt "$out/bin/" zerotier-one
@@ -34,11 +46,11 @@ stdenv.mkDerivation rec {
 
   outputs = [ "out" "man" ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Create flat virtual Ethernet networks of almost unlimited size";
-    homepage = https://www.zerotier.com;
-    license = licenses.gpl3;
-    maintainers = with maintainers; [ sjmackenzie zimbatm ehmry obadz ];
-    platforms = platforms.x86_64 ++ platforms.aarch64;
+    homepage = "https://www.zerotier.com";
+    license = licenses.bsl11;
+    maintainers = with maintainers; [ sjmackenzie zimbatm ehmry obadz danielfullmer ];
+    platforms = platforms.all;
   };
 }

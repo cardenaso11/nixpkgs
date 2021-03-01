@@ -1,15 +1,16 @@
-{ stdenv
+{ mkDerivation
+, lib
 , autoreconfHook
 , curl
 , fetchFromGitHub
 , git
 , libevent
 , libtool
-, libqrencode
-, libudev
-, libusb
+, qrencode
+, udev
+, libusb1
 , makeWrapper
-, pkgconfig
+, pkg-config
 , qtbase
 , qttools
 , qtwebsockets
@@ -46,32 +47,32 @@
 let
   copyUdevRuleToOutput = name: rule:
     "cp ${writeText name rule} $out/etc/udev/rules.d/${name}";
-in stdenv.mkDerivation rec {
-  name = "digitalbitbox-${version}";
-  version = "2.2.2";
+in mkDerivation rec {
+  pname = "digitalbitbox";
+  version = "3.0.0";
 
   src = fetchFromGitHub {
     owner = "digitalbitbox";
     repo = "dbb-app";
     rev = "v${version}";
-    sha256 = "1r77fvqrlaryzij5dfbnigzhvg1d12g96qb2gp8dy3xph1j0k3s1";
+    sha256 = "ig3+TdYv277D9GVnkRSX6nc6D6qruUOw/IQdQCK6FoA=";
   };
 
-  nativeBuildInputs = with stdenv.lib; [
+  nativeBuildInputs = with lib; [
     autoreconfHook
     curl
     git
     makeWrapper
-    pkgconfig
+    pkg-config
     qttools
   ];
 
-  buildInputs = with stdenv.lib; [
+  buildInputs = [
     libevent
     libtool
-    libudev
-    libusb
-    libqrencode
+    udev
+    libusb1
+    qrencode
 
     qtbase
     qtwebsockets
@@ -81,7 +82,7 @@ in stdenv.mkDerivation rec {
   LUPDATE="${qttools.dev}/bin/lupdate";
   LRELEASE="${qttools.dev}/bin/lrelease";
   MOC="${qtbase.dev}/bin/moc";
-  QTDIR="${qtbase.dev}";
+  QTDIR=qtbase.dev;
   RCC="${qtbase.dev}/bin/rcc";
   UIC="${qtbase.dev}/bin/uic";
 
@@ -93,6 +94,8 @@ in stdenv.mkDerivation rec {
     "format"
   ];
 
+  qtWrapperArgs = [ "--prefix LD_LIBRARY_PATH : $out/lib" ];
+
   postInstall = ''
     mkdir -p "$out/lib"
     cp src/libbtc/.libs/*.so* $out/lib
@@ -103,16 +106,15 @@ in stdenv.mkDerivation rec {
     # [RPATH][patchelf] Avoid forbidden reference error
     rm -rf $PWD
 
-    wrapProgram "$out/bin/dbb-cli" --prefix LD_LIBRARY_PATH : "$out/lib"
-    wrapProgram "$out/bin/dbb-app" --prefix LD_LIBRARY_PATH : "$out/lib"
-
     # Provide udev rules as documented in https://digitalbitbox.com/start_linux
     mkdir -p "$out/etc/udev/rules.d"
     ${copyUdevRuleToOutput "51-hid-digitalbox.rules" udevRule51}
     ${copyUdevRuleToOutput "52-hid-digitalbox.rules" udevRule52}
   '';
 
-  meta = with stdenv.lib; {
+  enableParallelBuilding = true;
+
+  meta = with lib; {
     description = "A QT based application for the Digital Bitbox hardware wallet";
     longDescription = ''
       Digital Bitbox provides dbb-app, a GUI tool, and dbb-cli, a CLI tool, to manage Digital Bitbox devices.

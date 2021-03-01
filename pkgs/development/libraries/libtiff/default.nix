@@ -1,39 +1,50 @@
-{ stdenv, fetchurl, fetchpatch, pkgconfig, zlib, libjpeg, xz }:
+{ lib, stdenv
+, fetchurl
 
-let
-  version = "4.0.9";
-in
+, pkg-config
+, cmake
+
+, zlib
+, libjpeg
+, xz
+}:
+
 stdenv.mkDerivation rec {
-  name = "libtiff-${version}";
+  version = "4.1.0";
+  pname = "libtiff";
 
   src = fetchurl {
-    url = "http://download.osgeo.org/libtiff/tiff-${version}.tar.gz";
-    sha256 = "1kfg4q01r4mqn7dj63ifhi6pmqzbf4xax6ni6kkk81ri5kndwyvf";
+    url = "https://download.osgeo.org/libtiff/tiff-${version}.tar.gz";
+    sha256 = "0d46bdvxdiv59lxnb0xz9ywm8arsr6xsapi5s6y6vnys2wjz6aax";
   };
 
-  prePatch = let
-      debian = fetchurl {
-        url = http://http.debian.net/debian/pool/main/t/tiff/tiff_4.0.9-5.debian.tar.xz;
-        sha256 = "15lwcsd46gini27akms2ngyxnwi1hs2yskrv5x2wazs5fw5ii62w";
-      };
-    in ''
-      tar xf ${debian}
-      patches="$patches $(sed 's|^|debian/patches/|' < debian/patches/series)"
-    '';
+  cmakeFlags = if stdenv.isDarwin then [
+    "-DCMAKE_SKIP_BUILD_RPATH=OFF"
+  ] else null;
 
-  outputs = [ "bin" "dev" "out" "man" "doc" ];
+  # FreeImage needs this patch
+  patches = [ ./headers.patch ];
 
-  nativeBuildInputs = [ pkgconfig ];
+  outputs = [ "bin" "dev" "dev_private" "out" "man" "doc" ];
+
+  postFixup = ''
+    moveToOutput include/tif_dir.h $dev_private
+    moveToOutput include/tif_config.h $dev_private
+    moveToOutput include/tiffiop.h $dev_private
+  '';
+
+  nativeBuildInputs = [ cmake pkg-config ];
 
   propagatedBuildInputs = [ zlib libjpeg xz ]; #TODO: opengl support (bogus configure detection)
 
   enableParallelBuilding = true;
 
-  doCheck = true; # not cross;
+  doInstallCheck = true;
+  installCheckTarget = "test";
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Library and utilities for working with the TIFF image file format";
-    homepage = http://download.osgeo.org/libtiff;
+    homepage = "http://download.osgeo.org/libtiff";
     license = licenses.libtiff;
     platforms = platforms.unix;
   };

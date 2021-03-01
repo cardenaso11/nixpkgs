@@ -1,9 +1,8 @@
-{ stdenv, fetchPypi, isPy3k, buildPythonPackage }:
+{ lib, fetchPypi, isPy3k, buildPythonPackage }:
 
 buildPythonPackage rec {
-  name = "${pname}-${version}";
   pname = "pyobjc";
-  version = "4.2.2";
+  version = "7.0";
 
   # Gives "No matching distribution found for
   # pyobjc-framework-Collaboration==4.0b1 (from pyobjc==4.0b1)"
@@ -11,13 +10,13 @@ buildPythonPackage rec {
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "24be63e394e8e66c1131e2b8e67e44f6c28ceb4329af01e9c10824044be8adbc";
+    sha256 = "2b6c3e98f1408564ace1df36927154d7827c8e2f382386ab5d2db95c891e35a0";
   };
 
-  meta = {
+  meta = with lib; {
     description = "A bridge between the Python and Objective-C programming languages";
-    license = stdenv.lib.licenses.mit;
-    maintainers = with stdenv.lib.maintainers; [ sauyon ];
-    homepage = https://pythonhosted.org/pyobjc/;
+    license = licenses.mit;
+    maintainers = with maintainers; [ ];
+    homepage = "https://pythonhosted.org/pyobjc/";
   };
 }

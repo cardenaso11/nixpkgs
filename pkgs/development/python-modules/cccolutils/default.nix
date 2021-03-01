@@ -1,9 +1,8 @@
-{ stdenv, buildPythonPackage, fetchPypi, isPy3k, krb5Full, nose, GitPython, mock, git }:
+{ lib, buildPythonPackage, fetchPypi, isPy3k, krb5Full, nose, GitPython, mock, git }:
 
 buildPythonPackage rec {
   pname = "CCColUtils";
   version = "1.5";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -15,9 +14,9 @@ buildPythonPackage rec {
 
   doCheck = isPy3k; # needs unpackaged module to run tests on python2
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Python Kerberos 5 Credential Cache Collection Utilities";
-    homepage = https://pagure.io/cccolutils;
+    homepage = "https://pagure.io/cccolutils";
     license = licenses.gpl2;
     maintainers = with maintainers; [ disassembler ];
   };

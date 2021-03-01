@@ -1,25 +1,37 @@
-{ lib, buildPythonPackage, fetchPypi, nose, pkgconfig }:
+{ lib, buildPythonPackage, fetchPypi, pkg-config }:
 
 buildPythonPackage rec {
   pname = "pkgconfig";
-  version = "1.3.1";
+  version = "1.5.1";
+
+  inherit (pkg-config)
+    setupHooks
+    wrapperName
+    suffixSalt
+    targetPrefix
+    baseBinName
+  ;
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "107x2wmchlch8saixb488cgjz9n6inl38wi7nxkb942rbaapxiqb";
+    sha256 = "97bfe3d981bab675d5ea3ef259045d7919c93897db7d3b59d4e8593cba8d354f";
   };
 
-  checkInputs = [ nose ];
 
-  propagatedBuildInputs = [ pkgconfig ];
+  propagatedNativeBuildInputs = [ pkg-config ];
 
-  checkPhase = ''
-    nosetests
+  doCheck = false;
+
+  patches = [ ./executable.patch ];
+  postPatch = ''
+    substituteInPlace pkgconfig/pkgconfig.py --replace 'PKG_CONFIG_EXE = "pkg-config"' 'PKG_CONFIG_EXE = "${pkg-config}/bin/${pkg-config.targetPrefix}pkg-config"'
   '';
+
+  pythonImportsCheck = [ "pkgconfig" ];
 
   meta = with lib; {
     description = "Interface Python with pkg-config";
-    homepage = https://github.com/matze/pkgconfig;
+    homepage = "https://github.com/matze/pkgconfig";
     license = licenses.mit;
   };
 }

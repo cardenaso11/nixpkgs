@@ -1,29 +1,53 @@
-{ stdenv, rustPlatform, fetchFromGitHub, cmake, pkgconfig, zlib, libiconv, darwin }:
+{ lib, stdenv
+, nixosTests
+, rustPlatform
+, fetchFromGitHub
+, pkg-config
+, less
+, Security
+, libiconv
+, installShellFiles
+, makeWrapper
+}:
 
 rustPlatform.buildRustPackage rec {
-  name    = "bat-${version}";
-  version = "0.4.1";
+  pname = "bat";
+  version = "0.18.0";
 
   src = fetchFromGitHub {
-    owner  = "sharkdp";
-    repo   = "bat";
-    rev    = "v${version}";
-    sha256 = "0fiif6b8g2hdb05s028dbcpav6ax0qap2hbsr9p2bld4z7j7321m";
+    owner = "sharkdp";
+    repo = pname;
+    rev = "v${version}";
+    sha256 = "113i11sgna82i4c4zk66qmbypmnmzh0lzp4kkgqnxxcdvyj00rb8";
   };
 
-  cargoSha256 = "0w0y3sfrpk8sn9rls90kjqrqr62pd690ripdfbvb5ipkzizp429l";
+  cargoSha256 = "12z7y303fmga91daf2w356qiqdqa7b8dz6nrrpnjdf0slyz0w3x4";
 
-  nativeBuildInputs = [ cmake pkgconfig zlib ];
+  nativeBuildInputs = [ pkg-config installShellFiles makeWrapper ];
 
-  buildInputs = [ libiconv ] ++ stdenv.lib.optionals stdenv.isDarwin [
-    darwin.apple_sdk.frameworks.Security
-  ];
+  buildInputs = lib.optionals stdenv.isDarwin [ Security libiconv ];
 
-  meta = with stdenv.lib; {
+  postInstall = ''
+    installManPage $releaseDir/build/bat-*/out/assets/manual/bat.1
+    installShellCompletion $releaseDir/build/bat-*/out/assets/completions/bat.{fish,zsh}
+  '';
+
+  # Insert Nix-built `less` into PATH because the system-provided one may be too old to behave as
+  # expected with certain flag combinations.
+  postFixup = ''
+    wrapProgram "$out/bin/bat" \
+      --prefix PATH : "${lib.makeBinPath [ less ]}"
+  '';
+
+  checkFlags = [ "--skip=pager_more" "--skip=pager_most" ];
+
+  passthru.tests = { inherit (nixosTests) bat; };
+
+  meta = with lib; {
     description = "A cat(1) clone with syntax highlighting and Git integration";
-    homepage    = https://github.com/sharkdp/bat;
-    license     = with licenses; [ asl20 /* or */ mit ];
-    maintainers = with maintainers; [ dywedir ];
-    platforms   = platforms.linux ++ platforms.darwin;
+    homepage = "https://github.com/sharkdp/bat";
+    changelog = "https://github.com/sharkdp/bat/raw/v${version}/CHANGELOG.md";
+    license = with licenses; [ asl20 /* or */ mit ];
+    maintainers = with maintainers; [ dywedir lilyball zowoq ];
   };
 }

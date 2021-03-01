@@ -16,7 +16,7 @@ let
     isExecutable = true;
     inherit (pkgs) perl;
     inherit (cfg) dbPath;
-    perlFlags = concatStrings (map (path: "-I ${path}/lib/perl5/site_perl ")
+    perlFlags = concatStrings (map (path: "-I ${path}/${pkgs.perl.libPrefix} ")
       [ pkgs.perlPackages.DBI pkgs.perlPackages.DBDSQLite pkgs.perlPackages.StringShellQuote ]);
   };
 
@@ -80,6 +80,8 @@ in
             # Retry the command if we just installed it.
             if [ $? = 126 ]; then
               "$@"
+            else
+              return 127
             fi
           else
             # Indicate than there was an error so ZSH falls back to its default handler

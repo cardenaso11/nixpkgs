@@ -1,4 +1,4 @@
-{ stdenv
+{ lib
 , fetchPypi
 , buildPythonPackage
 , zope_interface
@@ -7,20 +7,19 @@
 
 
 buildPythonPackage rec {
-  name = "${pname}-${version}";
   pname = "transaction";
-  version = "2.2.1";
+  version = "3.0.0";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "f2242070e437e5d555ea3df809cb517860513254c828f33847df1c5e4b776c7a";
+    sha256 = "3b0ad400cb7fa25f95d1516756c4c4557bb78890510f69393ad0bd15869eaa2d";
   };
 
   propagatedBuildInputs = [ zope_interface mock ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Transaction management";
-    homepage = https://pypi.python.org/pypi/transaction;
+    homepage = "https://pypi.python.org/pypi/transaction";
     license = licenses.zpl20;
   };
 }

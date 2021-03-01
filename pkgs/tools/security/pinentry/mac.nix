@@ -1,7 +1,8 @@
-{ fetchurl, stdenv, fetchFromGitHub, xcbuild, libiconv, Cocoa, ncurses }:
+{ lib, stdenv, fetchFromGitHub, xcbuildHook, libiconv, ncurses, Cocoa }:
 
-stdenv.mkDerivation rec {
-  name = "pinentry-mac-0.9.4";
+stdenv.mkDerivation {
+  pname = "pinentry-mac";
+  version = "0.9.4";
 
   src = fetchFromGitHub {
     owner = "matthewbauer";
@@ -10,7 +11,8 @@ stdenv.mkDerivation rec {
     sha256 = "0g75302697gqcxyf2hyqzvcbd5pyss1bl2xvfd40wqav7dlyvj83";
   };
 
-  buildInputs = [ xcbuild libiconv Cocoa ncurses ];
+  nativeBuildInputs = [ xcbuildHook ];
+  buildInputs = [ libiconv ncurses Cocoa ];
 
   installPhase = ''
     mkdir -p $out/Applications
@@ -23,8 +25,8 @@ stdenv.mkDerivation rec {
 
   meta = {
     description = "Pinentry for GPG on Mac";
-    license = stdenv.lib.licenses.gpl2Plus;
-    homepage = https://github.com/GPGTools/pinentry-mac;
-    platforms = stdenv.lib.platforms.darwin;
+    license = lib.licenses.gpl2Plus;
+    homepage = "https://github.com/GPGTools/pinentry-mac";
+    platforms = lib.platforms.darwin;
   };
 }

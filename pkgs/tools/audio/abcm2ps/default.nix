@@ -1,19 +1,15 @@
-{ stdenv, fetchFromGitHub, pkgconfig, which, freetype, pango }:
+{ lib, stdenv, fetchFromGitHub, pkg-config, which, docutils, freetype, pango }:
 
 stdenv.mkDerivation rec {
-  name = "abcm2ps-${version}";
-  version = "8.13.22";
+  pname = "abcm2ps";
+  version = "8.14.11";
 
   src = fetchFromGitHub {
     owner = "leesavide";
     repo = "abcm2ps";
     rev = "v${version}";
-    sha256 = "0csfg7aj9zg369q3c3bg18f24lk1j0356a90zlbrz7y5p668g3pv";
+    sha256 = "0lzzr2nkfg27gljcrdxkmli1wp08vap3vgxq1zgkv7f43rbm0qnw";
   };
-
-  prePatch = ''
-    chmod +x configure
-  '';
 
   configureFlags = [
     "--INSTALL=install"
@@ -23,12 +19,14 @@ stdenv.mkDerivation rec {
     "CC=${stdenv.cc}/bin/cc"
   ];
 
-  buildInputs = [ which pkgconfig freetype pango ];
+  nativeBuildInputs = [ which pkg-config docutils ];
 
-  meta = with stdenv.lib; {
-    homepage = http://moinejf.free.fr/;
+  buildInputs = [ freetype pango ];
+
+  meta = with lib; {
+    homepage = "http://moinejf.free.fr/";
     license = licenses.gpl3;
-    description = "abcm2ps is a command line program which converts ABC to music sheet in PostScript or SVG format";
+    description = "A command line program which converts ABC to music sheet in PostScript or SVG format";
     platforms = platforms.unix;
     maintainers = [ maintainers.dotlambda ];
   };

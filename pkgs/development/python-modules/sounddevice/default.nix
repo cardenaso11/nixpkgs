@@ -1,19 +1,21 @@
 { lib
 , buildPythonPackage
 , fetchPypi
+, isPy27
 , cffi
 , numpy
 , portaudio
+, substituteAll
 }:
 
 buildPythonPackage rec {
   pname = "sounddevice";
-  name = "${pname}-${version}";
-  version = "0.3.9";
+  version = "0.4.1";
+  disabled = isPy27;
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "1c9e833f8c8ccc67c0291c3448b29e9acc548fe56d15ee6f7fdd7037e00319f8";
+    sha256 = "f21978921186c0c7183af032fab77b735d824f3e926d76adb3fd0912e289ce0b";
   };
 
   propagatedBuildInputs = [ cffi numpy portaudio ];
@@ -21,13 +23,16 @@ buildPythonPackage rec {
   # No tests included nor upstream available.
   doCheck = false;
 
-  prePatch = ''
-    substituteInPlace src/sounddevice.py --replace "'portaudio'" "'${portaudio}/lib/libportaudio.so.2'"
-  '';
+  patches = [
+    (substituteAll {
+      src = ./fix-portaudio-library-path.patch;
+      portaudio = "${portaudio}/lib/libportaudio.so.2";
+    })
+  ];
 
   meta = {
     description = "Play and Record Sound with Python";
-    homepage = http://python-sounddevice.rtfd.org/;
+    homepage = "http://python-sounddevice.rtfd.org/";
     license = with lib.licenses; [ mit ];
     maintainers = with lib.maintainers; [ fridh ];
   };

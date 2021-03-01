@@ -1,17 +1,17 @@
-{ stdenv, fetchurl, pkgconfig
+{ lib, stdenv, fetchurl, pkg-config
 , gtk2, alsaLib
 , fftw, gsl
 }:
 
 stdenv.mkDerivation rec {
-  name = "snd-18.4";
+  name = "snd-20.3";
 
   src = fetchurl {
     url = "mirror://sourceforge/snd/${name}.tar.gz";
-    sha256 = "1asc513d0cmbq0ldzpzmfbydvlj5hwpp480qnicgkn96wplp9c7s";
+    sha256 = "016slh34gb6qqb38m8k9yg48rbhc5p12084szcwvanhh5v7fc7mk";
   };
 
-  nativeBuildInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkg-config ];
 
   buildInputs = [
     gtk2 alsaLib
@@ -20,10 +20,10 @@ stdenv.mkDerivation rec {
 
   meta = {
     description = "Sound editor";
-    homepage = http://ccrma.stanford.edu/software/snd;
-    platforms = stdenv.lib.platforms.linux;
-    license = stdenv.lib.licenses.free;
-    maintainers = with stdenv.lib.maintainers; [ fuuzetsu ];
+    homepage = "http://ccrma.stanford.edu/software/snd";
+    platforms = lib.platforms.linux;
+    license = lib.licenses.free;
+    maintainers = with lib.maintainers; [ ];
   };
 
 

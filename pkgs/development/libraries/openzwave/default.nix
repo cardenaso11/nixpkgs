@@ -1,21 +1,24 @@
-{ stdenv, fetchFromGitHub
-, doxygen, fontconfig, graphviz-nox, libxml2, pkgconfig, which
+{ lib, stdenv, fetchFromGitHub
+, doxygen, fontconfig, graphviz-nox, libxml2, pkg-config, which
 , systemd }:
 
 let
-  version = "2018-04-04";
+  version = "2019-12-08";
 
-in stdenv.mkDerivation rec {
-  name = "openzwave-${version}";
+in stdenv.mkDerivation {
+  pname = "openzwave";
+  inherit version;
 
+  # Use fork by Home Assistant because this package is mainly used for python.pkgs.homeassistant-pyozw.
+  # See https://github.com/OpenZWave/open-zwave/compare/master...home-assistant:hass for the difference.
   src = fetchFromGitHub {
-    owner = "OpenZWave";
+    owner = "home-assistant";
     repo = "open-zwave";
-    rev = "ab5fe966fee882bb9e8d78a91db892a60a1863d9";
-    sha256 = "0yby8ygzjn5zp5vhysxaadbzysqanwd2zakz379299qs454pr2h9";
+    rev = "2cd2137025c529835e4893a7b87c3d56605b2681";
+    sha256 = "04g8fb4f4ihakvvsmzcnncgfdd2ikmki7s22i9c6layzdwavbwf1";
   };
 
-  nativeBuildInputs = [ doxygen fontconfig graphviz-nox libxml2 pkgconfig which ];
+  nativeBuildInputs = [ doxygen fontconfig graphviz-nox libxml2 pkg-config which ];
 
   buildInputs = [ systemd ];
 
@@ -45,12 +48,12 @@ in stdenv.mkDerivation rec {
       --replace dir=    dir=$out
 
     substituteInPlace $out/bin/ozw_config \
-      --replace pcfile=${pkgconfig} pcfile=$out
+      --replace pcfile=${pkg-config} pcfile=$out
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "C++ library to control Z-Wave Networks via a USB Z-Wave Controller";
-    homepage = http://www.openzwave.net/;
+    homepage = "http://www.openzwave.net/";
     license = licenses.gpl3;
     maintainers = with maintainers; [ etu ];
     platforms = platforms.linux;

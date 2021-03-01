@@ -1,16 +1,16 @@
-{ stdenv, fetchFromGitHub, icestorm }:
+{ lib, stdenv, fetchFromGitHub, icestorm }:
 
 with builtins;
 
 stdenv.mkDerivation rec {
-  name = "arachne-pnr-${version}";
-  version = "2018.05.03";
+  pname = "arachne-pnr";
+  version = "2019.07.29";
 
   src = fetchFromGitHub {
-    owner  = "cseed";
+    owner  = "yosyshq";
     repo   = "arachne-pnr";
-    rev    = "ea2d04215bc0fd6072cda244caeb6670892033b3";
-    sha256 = "0qhf5djyh0pzmgv33rjnnqq6asmmwxjdadvr18a83iy9pll6gg5k";
+    rev    = "c40fb2289952f4f120cc10a5a4c82a6fb88442dc";
+    sha256 = "0lg9rccr486cvips3jf289af2b4a2j9chc8iqnkhykgi1hw4pszc";
   };
 
   enableParallelBuilding = true;
@@ -36,9 +36,9 @@ stdenv.mkDerivation rec {
       is a textual bitstream representation for assembly by
       the IceStorm [2] icepack command.
     '';
-    homepage = https://github.com/cseed/arachne-pnr;
-    license = stdenv.lib.licenses.mit;
-    maintainers = with stdenv.lib.maintainers; [ shell thoughtpolice ];
-    platforms = stdenv.lib.platforms.linux;
+    homepage = "https://github.com/cseed/arachne-pnr";
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [ shell thoughtpolice ];
+    platforms = lib.platforms.linux;
   };
 }

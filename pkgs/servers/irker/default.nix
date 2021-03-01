@@ -1,8 +1,8 @@
-{ stdenv, fetchFromGitLab, python, pkgconfig
+{ lib, stdenv, fetchFromGitLab, python, pkg-config
 , xmlto, docbook2x, docbook_xsl, docbook_xml_dtd_412 }:
 
-stdenv.mkDerivation rec {
-  name = "irker-${version}";
+stdenv.mkDerivation {
+  pname = "irker";
   version = "2017-02-12";
 
   src = fetchFromGitLab {
@@ -12,7 +12,7 @@ stdenv.mkDerivation rec {
     sha256 = "1hslwqa0gqsnl3l6hd5hxpn0wlachxd51infifhlwhyhd6iwgx8p";
   };
 
-  nativeBuildInputs = [ pkgconfig xmlto docbook2x docbook_xsl docbook_xml_dtd_412 ];
+  nativeBuildInputs = [ pkg-config xmlto docbook2x docbook_xsl docbook_xml_dtd_412 ];
 
   buildInputs = [
     python
@@ -31,9 +31,9 @@ stdenv.mkDerivation rec {
     "DESTDIR=$$out"
   ];
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "IRC client that runs as a daemon accepting notification requests";
-    homepage = https://gitlab.com/esr/irker;
+    homepage = "https://gitlab.com/esr/irker";
     license = licenses.bsd2;
     maintainers = with maintainers; [ dtzWill ];
     platforms = platforms.unix;

@@ -5,7 +5,7 @@
 # (e.g. due to minor changes in the compression algorithm, or changes
 # in timestamps).
 
-{ lib, fetchurl, unzip }:
+{ fetchurl, unzip }:
 
 { # Optionally move the contents of the unpacked tree up one level.
   stripRoot ? true
@@ -14,7 +14,7 @@
 , name ? "source"
 , ... } @ args:
 
-lib.overrideDerivation (fetchurl ({
+(fetchurl ({
   inherit name;
 
   recursiveHash = true;
@@ -23,8 +23,6 @@ lib.overrideDerivation (fetchurl ({
 
   postFetch =
     ''
-      export PATH=${unzip}/bin:$PATH
-
       unpackDir="$TMPDIR/unpack"
       mkdir "$unpackDir"
       cd "$unpackDir"
@@ -46,8 +44,16 @@ lib.overrideDerivation (fetchurl ({
       mv "$unpackDir/$fn" "$out"
     '' else ''
       mv "$unpackDir" "$out"
-    '') #*/
-    + extraPostFetch;
-} // removeAttrs args [ "stripRoot" "extraPostFetch" ]))
-# Hackety-hack: we actually need unzip hooks, too
-(x: {nativeBuildInputs = x.nativeBuildInputs++ [unzip];})
+    '')
+    + ''
+      ${extraPostFetch}
+    ''
+    # Remove non-owner write permissions
+    # Fixes https://github.com/NixOS/nixpkgs/issues/38649
+    + ''
+      chmod 755 "$out"
+    '';
+} // removeAttrs args [ "stripRoot" "extraPostFetch" ])).overrideAttrs (x: {
+  # Hackety-hack: we actually need unzip hooks, too
+  nativeBuildInputs = x.nativeBuildInputs ++ [ unzip ];
+})

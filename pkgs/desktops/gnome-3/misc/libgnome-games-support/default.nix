@@ -1,19 +1,44 @@
-{ stdenv, fetchurl, pkgconfig, glib, gtk3, libgee, intltool, gnome3
-, libintl }:
+{ lib, stdenv
+, fetchurl
+, pkg-config
+, glib
+, gtk3
+, libgee
+, gettext
+, vala
+, gnome3
+, libintl
+, meson
+, ninja
+}:
 
-let
+stdenv.mkDerivation rec {
   pname = "libgnome-games-support";
-  version = "1.4.1";
-in stdenv.mkDerivation rec {
-  name = "${pname}-${version}";
+  version = "1.8.0";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/${pname}/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "1j7lfcnc29lgn8ppn13wkn9w2y1n3lsapagwp91zh3bf0h2h4hv1";
+    url = "mirror://gnome/sources/${pname}/${lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "1pdk9hc30xdlv0ba24f7pvcr2d5370zykrmpws7hgmjgl4wfbpdb";
   };
 
-  nativeBuildInputs = [ pkgconfig intltool ];
-  buildInputs = [ glib gtk3 libgee libintl ];
+  nativeBuildInputs = [
+    gettext
+    meson
+    ninja
+    pkg-config
+    vala
+  ];
+
+  buildInputs = [
+    libintl
+  ];
+
+  propagatedBuildInputs = [
+    # Required by libgnome-games-support-1.pc
+    glib
+    gtk3
+    libgee
+  ];
 
   passthru = {
     updateScript = gnome3.updateScript {
@@ -22,11 +47,11 @@ in stdenv.mkDerivation rec {
     };
   };
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Small library intended for internal use by GNOME Games, but it may be used by others";
-    homepage = https://wiki.gnome.org/Apps/Games;
+    homepage = "https://wiki.gnome.org/Apps/Games";
     license = licenses.lgpl3;
-    maintainers = gnome3.maintainers;
+    maintainers = teams.gnome.members;
     platforms = platforms.unix;
   };
 }

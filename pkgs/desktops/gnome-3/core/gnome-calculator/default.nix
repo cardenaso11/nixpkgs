@@ -1,25 +1,25 @@
-{ stdenv, meson, ninja, vala, gettext, itstool, fetchurl, pkgconfig, libxml2
-, gtk3, glib, gtksourceview3, wrapGAppsHook, gobjectIntrospection
-, gnome3, mpfr, gmp, libsoup, libmpc }:
+{ lib, stdenv, meson, ninja, vala, gettext, itstool, fetchurl, pkg-config, libxml2
+, gtk3, glib, gtksourceview4, wrapGAppsHook, gobject-introspection, python3
+, gnome3, mpfr, gmp, libsoup, libmpc, gsettings-desktop-schemas, libgee }:
 
 stdenv.mkDerivation rec {
-  name = "gnome-calculator-${version}";
-  version = "3.28.1";
+  pname = "gnome-calculator";
+  version = "3.38.2";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/gnome-calculator/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "05zpdp9mkfjz22hs7hfjikkxhzmvy02mxrldrjxsv8ff17w9xvic";
+    url = "mirror://gnome/sources/gnome-calculator/${lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "0sri58cp6v07cqpdsf8dhf9dnykz305kvkx0l9dd25g06djcr0wc";
   };
 
   nativeBuildInputs = [
-    meson ninja pkgconfig vala gettext itstool wrapGAppsHook
-    gobjectIntrospection # for finding vapi files
+    meson ninja pkg-config vala gettext itstool wrapGAppsHook python3
+    gobject-introspection # for finding vapi files
   ];
 
   buildInputs = [
-    gtk3 glib libxml2 gtksourceview3 mpfr gmp
-    gnome3.defaultIconTheme
-    gnome3.gsettings-desktop-schemas libsoup libmpc
+    gtk3 glib libxml2 gtksourceview4 mpfr gmp
+    gnome3.adwaita-icon-theme libgee
+    gsettings-desktop-schemas libsoup libmpc
   ];
 
   doCheck = true;
@@ -36,10 +36,10 @@ stdenv.mkDerivation rec {
     };
   };
 
-  meta = with stdenv.lib; {
-    homepage = https://wiki.gnome.org/Apps/Calculator;
+  meta = with lib; {
+    homepage = "https://wiki.gnome.org/Apps/Calculator";
     description = "Application that solves mathematical equations and is suitable as a default application in a Desktop environment";
-    maintainers = gnome3.maintainers;
+    maintainers = teams.gnome.members;
     license = licenses.gpl3;
     platforms = platforms.linux;
   };

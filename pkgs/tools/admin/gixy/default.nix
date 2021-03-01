@@ -2,7 +2,7 @@
 
 python.pkgs.buildPythonApplication rec {
   pname = "gixy";
-  version = "0.1.9";
+  version = "0.1.20";
 
   # package is only compatible with python 2.7 and 3.5+
   disabled = with python.pkgs; !(pythonAtLeast "3.5" || isPy27);
@@ -12,7 +12,7 @@ python.pkgs.buildPythonApplication rec {
     owner = "yandex";
     repo = "gixy";
     rev = "v${version}";
-    sha256 = "11aps8a8xg1nlw36jgrmnaf38imfz2rj67wnlalrrsqb616xipcv";
+    sha256 = "14arz3fjidb8z37m08xcpih1391varj8s0v3gri79z3qb4zq5k6b";
   };
 
   postPatch = ''
@@ -25,6 +25,7 @@ python.pkgs.buildPythonApplication rec {
     pyparsing
     jinja2
     nose
+    setuptools
     six
   ];
 
@@ -34,7 +35,7 @@ python.pkgs.buildPythonApplication rec {
       Gixy is a tool to analyze Nginx configuration.
       The main goal of Gixy is to prevent security misconfiguration and automate flaw detection.
     '';
-    homepage = https://github.com/yandex/gixy;
+    homepage = "https://github.com/yandex/gixy";
     license = licenses.mpl20;
     maintainers = [ maintainers.willibutz ];
     platforms = platforms.linux;

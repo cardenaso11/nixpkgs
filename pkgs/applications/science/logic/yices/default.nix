@@ -1,13 +1,14 @@
-{ stdenv, fetchurl, gmp-static, gperf, autoreconfHook, libpoly }:
+{ lib, stdenv, fetchFromGitHub, gmp-static, gperf, autoreconfHook, libpoly }:
 
 stdenv.mkDerivation rec {
-  name    = "yices-${version}";
-  version = "2.5.4";
+  pname = "yices";
+  version = "2.6.1";
 
-  src = fetchurl {
-    url = "https://github.com/SRI-CSL/yices2/archive/Yices-${version}.tar.gz";
-    name = "${name}-src.tar.gz";
-    sha256 = "1k8wmlddi3zv5kgg6xbch3a0s0xqsmsfc7y6z8zrgcyhswl36h7p";
+  src = fetchFromGitHub {
+    owner  = "SRI-CSL";
+    repo   = "yices2";
+    rev    = "Yices-${version}";
+    sha256 = "04vf468spsh00jh7gj94cjnq8kjyfwy9l6r4z7l2pm0zgwkqgyhm";
   };
 
   nativeBuildInputs = [ autoreconfHook ];
@@ -22,20 +23,22 @@ stdenv.mkDerivation rec {
   doCheck = true;
 
   # Usual shenanigans
-  patchPhase = ''patchShebangs tests/regress/check.sh'';
+  patchPhase = "patchShebangs tests/regress/check.sh";
 
   # Includes a fix for the embedded soname being libyices.so.2.5, but
   # only installing the libyices.so.2.5.x file.
-  installPhase = ''
+  installPhase = let
+    ver_XdotY = lib.versions.majorMinor version;
+  in ''
       make install LDCONFIG=true
-      (cd $out/lib && ln -s -f libyices.so.${version} libyices.so.2.5)
+      ln -sfr $out/lib/libyices.so.{${version},${ver_XdotY}}
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A high-performance theorem prover and SMT solver";
     homepage    = "http://yices.csl.sri.com";
     license     = licenses.gpl3;
     platforms   = with platforms; linux ++ darwin;
-    maintainers = [ maintainers.thoughtpolice ];
+    maintainers = with maintainers; [ thoughtpolice ];
   };
 }

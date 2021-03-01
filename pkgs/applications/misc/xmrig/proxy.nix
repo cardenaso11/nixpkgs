@@ -1,24 +1,24 @@
-{ stdenv, lib, fetchFromGitHub, cmake, libuv, libmicrohttpd, libuuid
+{ stdenv, lib, fetchFromGitHub, cmake, libuv, libmicrohttpd, openssl
 , donateLevel ? 0
 }:
 
 stdenv.mkDerivation rec {
-  name = "xmrig-proxy-${version}";
-  version = "2.6.2";
+  pname = "xmrig-proxy";
+  version = "6.4.0";
 
   src = fetchFromGitHub {
     owner = "xmrig";
     repo = "xmrig-proxy";
     rev = "v${version}";
-    sha256 = "1yfbdgyd37r5vb2g8jz4i92hxang3hbiig5y4507v9hr75jvfivh";
+    sha256 = "0bcbil9b5z95haqbmdqaslckvjflw7h77fqrcdxc6lrn29575nnf";
   };
 
   nativeBuildInputs = [ cmake ];
-  buildInputs = [ libuv libmicrohttpd libuuid ];
+  buildInputs = [ libuv libmicrohttpd openssl ];
 
-  # Set default donation level to 0%. Can be increased at runtime via --donate-level option.
   postPatch = ''
-    substituteInPlace src/donate.h --replace "kDonateLevel = 2;" "kDonateLevel = ${toString donateLevel};"
+    # Link dynamically against libuuid instead of statically
+    substituteInPlace CMakeLists.txt --replace uuid.a uuid
   '';
 
   installPhase = ''

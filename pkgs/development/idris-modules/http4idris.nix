@@ -1,16 +1,13 @@
 { build-idris-package
 , fetchFromGitHub
-, prelude
 , contrib
 , lib
-, idris
 }:
-
 build-idris-package  {
   name = "http4idris";
   version = "2018-01-16";
 
-  idrisDeps = [ prelude contrib ];
+  idrisDeps = [ contrib ];
 
   src = fetchFromGitHub {
     owner = "A1kmm";
@@ -21,9 +18,8 @@ build-idris-package  {
 
   meta = {
     description = "An experimental HTTP framework for Idris";
-    homepage = https://github.com/A1kmm/http4idris;
+    homepage = "https://github.com/A1kmm/http4idris";
     license = lib.licenses.mit;
     maintainers = [ lib.maintainers.brainrape ];
-    inherit (idris.meta) platforms;
   };
 }

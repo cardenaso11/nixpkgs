@@ -1,8 +1,8 @@
-{ stdenv, fetchurl, tcl, makeWrapper }:
+{ lib, stdenv, fetchurl, tcl, makeWrapper, autoreconfHook }:
 
 stdenv.mkDerivation rec {
+  pname = "expect";
   version = "5.45.4";
-  name = "expect-${version}";
 
   src = fetchurl {
     url = "mirror://sourceforge/expect/Expect/${version}/expect${version}.tar.gz";
@@ -10,12 +10,12 @@ stdenv.mkDerivation rec {
   };
 
   buildInputs = [ tcl ];
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ makeWrapper autoreconfHook ];
 
   hardeningDisable = [ "format" ];
 
-  patchPhase = ''
-    sed -i "s,/bin/stty,$(type -p stty),g" configure
+  postPatch = ''
+    sed -i "s,/bin/stty,$(type -p stty),g" configure.in
   '';
 
   configureFlags = [
@@ -29,15 +29,17 @@ stdenv.mkDerivation rec {
       wrapProgram $i \
         --prefix PATH : "${tcl}/bin" \
         --prefix TCLLIBPATH ' ' $out/lib/* \
-        ${stdenv.lib.optionalString stdenv.isDarwin "--prefix DYLD_LIBRARY_PATH : $out/lib/expect${version}"}
+        ${lib.optionalString stdenv.isDarwin "--prefix DYLD_LIBRARY_PATH : $out/lib/expect${version}"}
     done
   '';
 
-  meta = with stdenv.lib; {
+  outputs = [ "out" "dev" ];
+
+  meta = with lib; {
     description = "A tool for automating interactive applications";
-    homepage = http://expect.sourceforge.net/;
-    license = "Expect";
+    homepage = "http://expect.sourceforge.net/";
+    license = licenses.publicDomain;
     platforms = platforms.unix;
-    maintainers = with maintainers; [ wkennington ];
+    maintainers = with maintainers; [ SuperSandro2000 ];
   };
 }

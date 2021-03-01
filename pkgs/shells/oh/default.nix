@@ -1,8 +1,8 @@
-{ stdenv, lib, buildGoPackage, fetchgit, fetchhg, fetchbzr, fetchsvn }:
+{ buildGoPackage, fetchgit, lib }:
 
 buildGoPackage rec {
-  name = "oh-${version}";
-  version = "20160522-${stdenv.lib.strings.substring 0 7 rev}";
+  pname = "oh";
+  version = "20160522-${lib.strings.substring 0 7 rev}";
   rev = "0daaf4081475fb9d6b3801c85019bdd57b2ee9b4";
 
   goPackagePath = "github.com/michaelmacinnis/oh";
@@ -14,4 +14,10 @@ buildGoPackage rec {
   };
 
   goDeps = ./deps.nix;
+
+  meta = with lib;{
+    homepage = "https://github.com/michaelmacinnis/oh";
+    description = "A Unix shell";
+    license = lib.licenses.mit;
+  };
 }

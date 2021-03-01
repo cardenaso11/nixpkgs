@@ -1,45 +1,71 @@
-{ stdenv, fetchurl, stfl, sqlite, curl, gettext, pkgconfig, libxml2, json_c, ncurses
-, asciidoc, docbook_xml_dtd_45, libxslt, docbook_xml_xslt, libiconv, makeWrapper }:
+{ lib, stdenv, rustPlatform, fetchFromGitHub, stfl, sqlite, curl, gettext, pkg-config, libxml2, json_c, ncurses
+, asciidoctor, libiconv, Security, Foundation, makeWrapper }:
 
-stdenv.mkDerivation rec {
-  name = "newsboat-${version}";
-  version = "2.11.1";
+rustPlatform.buildRustPackage rec {
+  pname = "newsboat";
+  version = "2.22.1";
 
-  src = fetchurl {
-    url = "https://newsboat.org/releases/${version}/${name}.tar.xz";
-    sha256 = "1krpxl854h5dwmpr81m1s84cwk8zivdzvw0s5s0i4dba736pvdma";
+  src = fetchFromGitHub {
+    owner = "newsboat";
+    repo = "newsboat";
+    rev = "r${version}";
+    sha256 = "1j3z34dhqw0f1v6v2lfwcvzqnm2kr2940bgxibfi0npacp74izh3";
   };
 
-  prePatch = ''
+  cargoSha256 = "08ywaka1lib8yrqjmfx1i37f7b33y3i6jj7f50pwhw8n6lr9f7lc";
+
+  postPatch = ''
     substituteInPlace Makefile --replace "|| true" ""
-    # Allow other ncurses versions on Darwin
-    substituteInPlace config.sh \
-      --replace "ncurses5.4" "ncurses"
+  ''
+    # TODO: Check if that's still needed
+    + lib.optionalString stdenv.isDarwin ''
+      # Allow other ncurses versions on Darwin
+      substituteInPlace config.sh \
+        --replace "ncurses5.4" "ncurses"
+    ''
+  ;
+
+  nativeBuildInputs = [
+    pkg-config
+    asciidoctor
+    gettext
+  ] ++ lib.optionals stdenv.isDarwin [ makeWrapper ncurses ];
+
+  buildInputs = [ stfl sqlite curl libxml2 json_c ncurses ]
+    ++ lib.optionals stdenv.isDarwin [ Security Foundation libiconv gettext ];
+
+  postBuild = ''
+    make prefix="$out"
   '';
 
-  nativeBuildInputs = [ pkgconfig asciidoc docbook_xml_dtd_45 libxslt docbook_xml_xslt ]
-                      ++ stdenv.lib.optional stdenv.isDarwin [ makeWrapper libiconv ];
+  # TODO: Check if that's still needed
+  NIX_CFLAGS_COMPILE = lib.optionalString stdenv.isDarwin " -Wno-error=format-security";
 
-  buildInputs = [ stfl sqlite curl gettext libxml2 json_c ncurses ];
-
-  makeFlags = [ "prefix=$(out)" ];
+  # https://github.com/NixOS/nixpkgs/pull/98471#issuecomment-703100014 . We set
+  # these for all platforms, since upstream's gettext crate behavior might
+  # change in the future.
+  GETTEXT_LIB_DIR = "${lib.getLib gettext}/lib";
+  GETTEXT_INCLUDE_DIR = "${lib.getDev gettext}/include";
+  GETTEXT_BIN_DIR = "${lib.getBin gettext}/bin";
 
   doCheck = true;
-  checkTarget = "test";
 
-  NIX_CFLAGS_COMPILE = "-Wno-error=sign-compare";
+  preCheck = ''
+    make test
+  '';
 
   postInstall = ''
+    make prefix="$out" install
     cp -r contrib $out
-  '' + stdenv.lib.optionalString stdenv.isDarwin ''
+  '' + lib.optionalString stdenv.isDarwin ''
     for prog in $out/bin/*; do
       wrapProgram "$prog" --prefix DYLD_LIBRARY_PATH : "${stfl}/lib"
     done
   '';
 
-  meta = with stdenv.lib; {
-    homepage    = https://newsboat.org/;
-    description = "A fork of Newsbeuter, an RSS/Atom feed reader for the text console.";
+  meta = with lib; {
+    homepage    = "https://newsboat.org/";
+    description = "A fork of Newsbeuter, an RSS/Atom feed reader for the text console";
     maintainers = with maintainers; [ dotlambda nicknovitski ];
     license     = licenses.mit;
     platforms   = platforms.unix;

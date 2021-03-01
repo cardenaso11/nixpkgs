@@ -1,47 +1,37 @@
-{ stdenv, fetchFromGitHub, cmake
-, qt5, libidn, qca2-qt5, libXScrnSaver, hunspell
-, libgcrypt, libotr, html-tidy, libgpgerror
+{ mkDerivation, lib, fetchFromGitHub, cmake
+, qtbase, qtmultimedia, qtx11extras, qttools, qtwebengine
+, libidn, qca-qt5, libsecret, libXScrnSaver, hunspell
+, libgcrypt, libotr, html-tidy, libgpgerror, libsignal-protocol-c
 }:
 
-stdenv.mkDerivation rec {
-  name = "psi-plus-${version}";
-  version = "1.2.235";
+mkDerivation rec {
+  pname = "psi-plus";
+  version = "1.4.1473";
 
   src = fetchFromGitHub {
     owner = "psi-plus";
     repo = "psi-plus-snapshots";
-    rev = "${version}";
-    sha256 = "0rc65gs6m3jxg407r99kikdylvrar5mq7x5m66ma604yk5igwg47";
+    rev = version;
+    sha256 = "03f28zwbjn6fnsm0fqg8lmc11rpfdfvzjf7k7xydc3lzy8pxbds5";
   };
-
-  resources = fetchFromGitHub {
-    owner = "psi-plus";
-    repo = "resources";
-    rev = "8f5038380e1be884b04b5a1ad3cc3385e793f668";
-    sha256 = "1b8a2aixg966fzjwp9hz51rc31imyvpx014mp2fsm47k8na4470d";
-  };
-
-  postUnpack = ''
-    cp -a "${resources}/iconsets" "$sourceRoot"
-  '';
 
   cmakeFlags = [
     "-DENABLE_PLUGINS=ON"
   ];
 
-  nativeBuildInputs = [ cmake ];
+  nativeBuildInputs = [ cmake qttools ];
 
   buildInputs = [
-    qt5.qtbase qt5.qtmultimedia qt5.qtx11extras qt5.qttools qt5.qtwebkit
-    libidn qca2-qt5 libXScrnSaver hunspell
-    libgcrypt libotr html-tidy libgpgerror
+    qtbase qtmultimedia qtx11extras qtwebengine
+    libidn qca-qt5 libsecret libXScrnSaver hunspell
+    libgcrypt libotr html-tidy libgpgerror libsignal-protocol-c
   ];
 
-  enableParallelBuilding = true;
-
-  meta = with stdenv.lib; {
+  meta = with lib; {
+    homepage = "https://sourceforge.net/projects/psiplus/";
     description = "XMPP (Jabber) client";
-    maintainers = with maintainers; [ orivej ];
+    maintainers = with maintainers; [ orivej misuzu ];
+    license = licenses.gpl2;
     platforms = platforms.linux;
   };
 }

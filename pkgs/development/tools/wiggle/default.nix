@@ -1,12 +1,12 @@
-{ stdenv, fetchurl, ncurses, groff }:
+{ lib, stdenv, fetchurl, ncurses, groff }:
 
 stdenv.mkDerivation {
 
-  name = "wiggle-1.1";
+  name = "wiggle-1.2";
 
   src = fetchurl {
-    url = "https://github.com/neilbrown/wiggle/archive/v1.1.tar.gz";
-    sha256 = "0gg1c0zcrd5fgawvjccmdscm3fka8h1qz4v807kvy1b2y1cf9c4w";
+    url = "https://github.com/neilbrown/wiggle/archive/v1.2.tar.gz";
+    sha256 = "1gckj0zv2xznzg7i70p9dfmkhdpdg3953msi4gg5h6mpmmiiiwrw";
   };
 
   buildInputs = [ ncurses groff ];
@@ -22,7 +22,7 @@ stdenv.mkDerivation {
   '';
 
   meta = {
-    homepage = http://blog.neil.brown.name/category/wiggle/;
+    homepage = "http://blog.neil.brown.name/category/wiggle/";
     description = "Tool for applying patches with conflicts";
 
     longDescription = ''
@@ -37,8 +37,8 @@ stdenv.mkDerivation {
        already been applied, and will ignore them.
     '';
 
-    license = stdenv.lib.licenses.gpl2Plus;
-    platforms = stdenv.lib.platforms.all;
+    license = lib.licenses.gpl2Plus;
+    platforms = lib.platforms.all;
   };
 
 }

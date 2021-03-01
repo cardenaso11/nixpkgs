@@ -1,42 +1,49 @@
-{ stdenv, pass, fetchFromGitHub, pythonPackages, makeWrapper }:
+{ lib, stdenv, fetchFromGitHub, pythonPackages, makeWrapper, fetchpatch }:
 
 let
-  pythonEnv = pythonPackages.python.withPackages (p: [ p.defusedxml ]);
+  pythonEnv = pythonPackages.python.withPackages (p: [
+    p.defusedxml
+    p.setuptools
+    p.pyaml
+    p.pykeepass
+    p.filemagic
+    p.cryptography
+    p.secretstorage
+  ]);
 
 in stdenv.mkDerivation rec {
-  name = "pass-import-${version}";
-  version = "2.2";
+  pname = "pass-import";
+  version = "3.1";
 
   src = fetchFromGitHub {
     owner = "roddhjav";
     repo = "pass-import";
     rev = "v${version}";
-    sha256 = "189wf2jz2j43k27930cnl53sm2drh1s0nq1nmh4is3rzn8cna6wq";
+    sha256 = "sha256-nH2xAqWfMT+Brv3z9Aw6nbvYqArEZjpM28rKsRPihqA=";
   };
+
+  patches = [ ./0001-Fix-installation-with-Nix.patch ];
 
   nativeBuildInputs = [ makeWrapper ];
 
   buildInputs = [ pythonEnv ];
 
-  patchPhase = ''
-    sed -i -e 's|$0|${pass}/bin/pass|' import.bash
-  '';
+  makeFlags = [ "DESTDIR=${placeholder "out"}" ];
 
-  dontBuild = true;
-
-  installFlags = [ "PREFIX=$(out)" ];
-
-  postFixup = ''
+  postInstall = ''
+    wrapProgram $out/bin/pimport \
+      --prefix PATH : "${pythonEnv}/bin" \
+      --prefix PYTHONPATH : "$out/${pythonPackages.python.sitePackages}"
     wrapProgram $out/lib/password-store/extensions/import.bash \
       --prefix PATH : "${pythonEnv}/bin" \
-      --run "export PREFIX"
+      --prefix PYTHONPATH : "$out/${pythonPackages.python.sitePackages}"
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Pass extension for importing data from existing password managers";
-    homepage = https://github.com/roddhjav/pass-import;
+    homepage = "https://github.com/roddhjav/pass-import";
     license = licenses.gpl3Plus;
-    maintainers = with maintainers; [ lovek323 the-kenny fpletz tadfisher ];
+    maintainers = with maintainers; [ lovek323 fpletz tadfisher ];
     platforms = platforms.unix;
   };
 }

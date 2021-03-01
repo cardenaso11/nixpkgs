@@ -1,16 +1,16 @@
-{ stdenv, ocaml, findlib, jbuilder, cohttp, lwt3, uri, ppx_sexp_conv }:
+{ lib, buildDunePackage, cohttp, ocaml_lwt, uri, ppx_sexp_conv, logs }:
 
-if !stdenv.lib.versionAtLeast cohttp.version "0.99"
+if !lib.versionAtLeast cohttp.version "0.99"
 then cohttp
+else if !lib.versionAtLeast ppx_sexp_conv.version "0.13"
+then throw "cohttp-lwt is not available for ppx_sexp_conv version ${ppx_sexp_conv.version}"
 else
 
-stdenv.mkDerivation rec {
-	name = "ocaml${ocaml.version}-cohttp-lwt-${version}";
-	inherit (cohttp) version src installPhase meta;
+buildDunePackage {
+  pname = "cohttp-lwt";
+  inherit (cohttp) version src useDune2 meta;
 
-	buildInputs = [ ocaml findlib jbuilder uri ppx_sexp_conv ];
+  buildInputs = [ uri ppx_sexp_conv ];
 
-	propagatedBuildInputs = [ cohttp lwt3 ];
-
-	buildPhase = "jbuilder build -p cohttp-lwt";
+  propagatedBuildInputs = [ cohttp ocaml_lwt logs ];
 }

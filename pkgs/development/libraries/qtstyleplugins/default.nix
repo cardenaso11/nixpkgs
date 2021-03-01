@@ -1,6 +1,6 @@
-{ stdenv, fetchFromGitHub, qmake, qtbase, pkgconfig, gtk2 }:
+{ lib, mkDerivation, fetchFromGitHub, qmake, pkg-config, gtk2 }:
 
-stdenv.mkDerivation rec {
+mkDerivation {
   name = "qtstyleplugins-2017-03-11";
 
   src = fetchFromGitHub {
@@ -10,12 +10,14 @@ stdenv.mkDerivation rec {
     sha256 = "085wyn85nrmzr8nv5zv7fi2kqf8rp1gnd30h72s30j55xvhmxvmy";
   };
 
-  nativeBuildInputs = [ pkgconfig qmake ];
+  patches = [ ./fix-build-against-Qt-5.15.patch ];
+
+  nativeBuildInputs = [ pkg-config qmake ];
   buildInputs = [ gtk2 ];
 
-  meta = with stdenv.lib; {
-    description = "Additional style plugins for Qt5, including BB10, GTK+, Cleanlooks, Motif, Plastique";
-    homepage = http://blog.qt.io/blog/2012/10/30/cleaning-up-styles-in-qt5-and-adding-fusion/;
+  meta = with lib; {
+    description = "Additional style plugins for Qt5, including BB10, GTK, Cleanlooks, Motif, Plastique";
+    homepage = "http://blog.qt.io/blog/2012/10/30/cleaning-up-styles-in-qt5-and-adding-fusion/";
     license = licenses.lgpl21;
     maintainers = [ maintainers.gnidorah ];
     platforms = platforms.linux;

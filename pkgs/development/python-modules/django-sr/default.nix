@@ -2,12 +2,11 @@
 
 buildPythonPackage rec {
   pname = "django-sr";
-  name = "${pname}-${version}";
   version = "0.0.4";
 
   meta = {
     description = "Django settings resolver";
-    homepage = https://github.com/jespino/django-sr;
+    homepage = "https://github.com/jespino/django-sr";
     license = lib.licenses.bsd3;
   };
 

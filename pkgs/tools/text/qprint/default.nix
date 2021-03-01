@@ -1,10 +1,10 @@
-{ fetchurl, stdenv }:
+{ fetchurl, lib, stdenv }:
 
 stdenv.mkDerivation rec {
   name = "qprint-1.1";
 
   src = fetchurl {
-    url = "http://www.fourmilab.ch/webtools/qprint/${name}.tar.gz";
+    url = "https://www.fourmilab.ch/webtools/qprint/${name}.tar.gz";
     sha256 = "1701cnb1nl84rmcpxzq11w4cyj4385jh3gx4aqxznwf8a4fwmagz";
   };
 
@@ -18,11 +18,11 @@ stdenv.mkDerivation rec {
   '';
 
   meta = {
-    homepage = http://www.fourmilab.ch/webtools/qprint/;
-    license = stdenv.lib.licenses.publicDomain;
+    homepage = "http://www.fourmilab.ch/webtools/qprint/";
+    license = lib.licenses.publicDomain;
     description = "Encode and decode Quoted-Printable files";
-    maintainers = [ stdenv.lib.maintainers.tv ];
-    platforms = stdenv.lib.platforms.all;
+    maintainers = [ lib.maintainers.tv ];
+    platforms = lib.platforms.all;
   };
 
 }

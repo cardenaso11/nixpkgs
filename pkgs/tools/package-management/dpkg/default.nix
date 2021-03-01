@@ -1,20 +1,20 @@
-{ stdenv, fetchurl, perl, zlib, bzip2, xz, makeWrapper, coreutils }:
+{ lib, stdenv, fetchurl, perl, zlib, bzip2, xz, makeWrapper, coreutils }:
 
 stdenv.mkDerivation rec {
-  name = "dpkg-${version}";
-  version = "1.19.0.5";
+  pname = "dpkg";
+  version = "1.20.7.1";
 
   src = fetchurl {
     url = "mirror://debian/pool/main/d/dpkg/dpkg_${version}.tar.xz";
-    sha256 = "1dc5kp3fqy1k66fly6jfxkkg7w6d0jy8szddpfyc2xvzga94d041";
+    sha256 = "sha256-Cq0t5of3l++OvavHuv0W3BSX8c4jvZFG+apz85alY28=";
   };
 
   configureFlags = [
     "--disable-dselect"
     "--with-admindir=/var/lib/dpkg"
     "PERL_LIBDIR=$(out)/${perl.libPrefix}"
-    (stdenv.lib.optionalString stdenv.isDarwin "--disable-linker-optimisations")
-    (stdenv.lib.optionalString stdenv.isDarwin "--disable-start-stop-daemon")
+    (lib.optionalString stdenv.isDarwin "--disable-linker-optimisations")
+    (lib.optionalString stdenv.isDarwin "--disable-start-stop-daemon")
   ];
 
   preConfigure = ''
@@ -50,7 +50,7 @@ stdenv.mkDerivation rec {
   '';
 
   buildInputs = [ perl zlib bzip2 xz ];
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ makeWrapper perl ];
 
   postInstall =
     ''
@@ -64,11 +64,11 @@ stdenv.mkDerivation rec {
       cp -r scripts/t/origins $out/etc/dpkg
     '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "The Debian package manager";
-    homepage = https://wiki.debian.org/Teams/Dpkg;
+    homepage = "https://wiki.debian.org/Teams/Dpkg";
     license = licenses.gpl2Plus;
     platforms = platforms.unix;
-    maintainers = with maintainers; [ ];
+    maintainers = with maintainers; [ siriobalmelli ];
   };
 }

@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, pythonPackages }:
+{ lib, fetchFromGitHub, pythonPackages }:
 
 let
   inherit (pythonPackages) python;
@@ -18,19 +18,19 @@ pythonPackages.buildPythonApplication rec {
     sha256 = "11bd87474qpif20xdcn0ra1idj5k16ka51i658wfpxwc6nzsn92b";
   };
 
-  buildInputs = with pythonPackages; [ jinja2 pytest mock coverage ];
+  checkInputs = with pythonPackages; [ jinja2 pytest mock coverage ];
 
   buildPhase = ''
     ${python.interpreter} setup.py build
   '';
 
   installPhase = ''
-    mkdir -p "$out/lib/${python.libPrefix}/site-packages"
+    mkdir -p "$out/${python.sitePackages}"
 
-    export PYTHONPATH="$out/lib/${python.libPrefix}/site-packages:$PYTHONPATH"
+    export PYTHONPATH="$out/${python.sitePackages}:$PYTHONPATH"
 
-    ${python}/bin/${python.executable} setup.py install \
-      --install-lib=$out/lib/${python.libPrefix}/site-packages \
+    ${python.interpreter} setup.py install \
+      --install-lib=$out/${python.sitePackages} \
       --prefix="$out"
   '';
 
@@ -40,10 +40,10 @@ pythonPackages.buildPythonApplication rec {
     runHook postCheck
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A Python clone of Foreman, a tool for managing Procfile-based applications";
     license = licenses.mit;
-    homepage = https://github.com/nickstenning/honcho;
+    homepage = "https://github.com/nickstenning/honcho";
     maintainers = with maintainers; [ benley ];
     platforms = platforms.unix;
   };

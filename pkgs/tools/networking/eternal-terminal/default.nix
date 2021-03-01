@@ -1,26 +1,30 @@
-{ stdenv, fetchFromGitHub, cmake, gflags, glog, libsodium, protobuf }:
+{ lib, stdenv
+, fetchFromGitHub
+, cmake
+, gflags
+, libsodium
+, protobuf
+}:
 
 stdenv.mkDerivation rec {
-  name = "eternal-terminal-${version}";
-  version = "4.1.2";
+  pname = "eternal-terminal";
+  version = "6.0.13";
 
   src = fetchFromGitHub {
     owner = "MisterTea";
-    repo = "EternalTCP";
-    rev = "refs/tags/et-v${version}";
-    sha256 = "1zy30ccsddgs2wqwxphnx5i00j4gf69lr68mzg9x6imqfz0sbcjz";
+    repo = "EternalTerminal";
+    rev = "et-v${version}";
+    sha256 = "0sb1hypg2276y8c2a5vivrkcxp70swddvhnd9h273if3kv6j879r";
   };
 
   nativeBuildInputs = [ cmake ];
-  buildInputs = [ gflags glog libsodium protobuf ];
+  buildInputs = [ gflags libsodium protobuf ];
 
-  enableParallelBuilding = true;
-
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Remote shell that automatically reconnects without interrupting the session";
     license = licenses.asl20;
-    homepage = https://mistertea.github.io/EternalTCP/;
-    platforms = platforms.linux;
-    maintainers = [ maintainers.dezgeg ];
+    homepage = "https://mistertea.github.io/EternalTerminal/";
+    platforms = platforms.linux ++ platforms.darwin;
+    maintainers = with maintainers; [ dezgeg pingiun ];
   };
 }

@@ -1,14 +1,22 @@
-{ stdenv, fetchurl, autoreconfHook, pkgconfig, openssl, botan2, log4cplus
-, boost, python3, postgresql, mysql, gmp, bzip2 }:
+{ stdenv
+, lib
+, fetchurl
+, autoreconfHook
+, pkg-config
+, boost
+, botan2
+, libmysqlclient
+, log4cplus
+, postgresql
+, python3 }:
 
 stdenv.mkDerivation rec {
-  name = "${pname}-${version}";
   pname = "kea";
-  version = "1.3.0";
+  version = "1.9.3";
 
   src = fetchurl {
-    url = "https://ftp.isc.org/isc/${pname}/${version}/${name}.tar.gz";
-    sha256 = "14f32lsdd1824cx9a4l4pfbhq1d4jik6l6hxd911ihi64nzwvpvf";
+    url = "https://ftp.isc.org/isc/${pname}/${version}/${pname}-${version}.tar.gz";
+    sha256 = "sha256-gEuEbqvy/YpXfNkeNcaobI5gH2AvlL6E/lm2HfPATZ8=";
   };
 
   patches = [ ./dont-create-var.patch ];
@@ -19,21 +27,30 @@ stdenv.mkDerivation rec {
   '';
 
   configureFlags = [
+    "--enable-perfdhcp"
+    "--enable-shell"
     "--localstatedir=/var"
-    "--with-dhcp-pgsql=${postgresql}/bin/pg_config"
-    "--with-dhcp-mysql=${mysql.connector-c}/bin/mysql_config"
+    "--with-mysql=${lib.getDev libmysqlclient}/bin/mysql_config"
+    "--with-pgsql=${postgresql}/bin/pg_config"
   ];
 
-  nativeBuildInputs = [ autoreconfHook pkgconfig ];
+  nativeBuildInputs = [
+    autoreconfHook
+    pkg-config
+  ];
+
   buildInputs = [
-    openssl log4cplus boost python3 mysql.connector-c
-    botan2 gmp bzip2
+    boost
+    botan2
+    libmysqlclient
+    log4cplus
+    python3
   ];
 
   enableParallelBuilding = true;
 
-  meta = with stdenv.lib; {
-    homepage = https://kea.isc.org/;
+  meta = with lib; {
+    homepage = "https://kea.isc.org/";
     description = "High-performance, extensible DHCP server by ISC";
     longDescription = ''
       KEA is a new open source DHCPv4/DHCPv6 server being developed by

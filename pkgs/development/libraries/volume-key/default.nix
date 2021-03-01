@@ -1,36 +1,46 @@
-{ stdenv, fetchgit, fetchpatch, autoreconfHook, pkgconfig, gettext, python2
-, swig, glib, utillinux, cryptsetup, nss, gpgme
+{ lib, stdenv, fetchgit, autoreconfHook, pkg-config, gettext, python3
+, ncurses, swig, glib, util-linux, cryptsetup, nss, gpgme
+, autoconf, automake, libtool
+, buildPackages
 }:
 
 let
-  version = "0.3.10";
-in stdenv.mkDerivation rec {
-  name = "volume_key-${version}";
+  version = "0.3.11";
+in stdenv.mkDerivation {
+  pname = "volume_key";
+  inherit version;
 
   src = fetchgit {
-    url = https://pagure.io/volume_key.git;
-    rev = "ece1ce305234da454e330905c615ec474d9781c5";
-    sha256 = "16qdi5s6ycsh0iyc362gly7ggrwamky8i0zgbd4ajp3ymk9vqdva";
+    url = "https://pagure.io/volume_key.git";
+    rev = "volume_key-${version}";
+    sha256 = "1sqdbcih1c39bjiv4mm1m7acc3lfh2i2hf2r9i7rk8adfzq8awma";
   };
 
-  outputs = [ "out" "man" "dev" ];
+  outputs = [ "out" "man" "dev" "py" ];
 
-  nativeBuildInputs = [ autoreconfHook pkgconfig gettext python2 swig ];
+  nativeBuildInputs = [ autoconf automake libtool pkg-config gettext swig ];
 
-  buildInputs = [ glib cryptsetup nss utillinux gpgme ];
+  buildInputs = [ autoreconfHook glib cryptsetup nss util-linux gpgme ncurses ];
 
-  patches = [
-    # Use pkg-config for locating Python.h
-    # https://pagure.io/volume_key/pull-request/12
-    (fetchpatch {
-      url = https://pagure.io/fork/cathay4t/volume_key/c/8eda66d3b734ea335e37cf9d7d173b9e8ebe2fd9.patch;
-      sha256 = "01lr1zijk0imkk681zynm4w5ad3y6c9vdrmrzaib7w7ima75iczr";
-    })
+  configureFlags = [
+    "--with-gpgme-prefix=${gpgme.dev}"
   ];
 
-  meta = with stdenv.lib; {
+  preConfigure = ''
+    export PYTHON="${buildPackages.python3}/bin/python"
+    export PYTHON3_CONFIG="${python3}/bin/python3-config"
+  '';
+
+  makeFlags = [
+    "pyexecdir=$(py)/${python3.sitePackages}"
+    "pythondir=$(py)/${python3.sitePackages}"
+  ];
+
+  doCheck = false; # fails 1 out of 1 tests, needs `certutil`
+
+  meta = with lib; {
     description = "A library for manipulating storage volume encryption keys and storing them separately from volumes to handle forgotten passphrases, and the associated command-line tool";
-    homepage = https://pagure.io/volume_key/;
+    homepage = "https://pagure.io/volume_key/";
     license = licenses.gpl2;
     maintainers = with maintainers; [];
     platforms = platforms.linux;

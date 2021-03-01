@@ -1,16 +1,17 @@
-{ stdenv, python, buildPythonPackage
-, fetchPypi, isPy3k, linuxPackages, gcc5
-, fastrlock, numpy, six, wheel, pytest, mock
+{ lib, buildPythonPackage
+, fetchPypi, isPy3k, linuxPackages
+, fastrlock, numpy, six, wheel, pytest, mock, setuptools
 , cudatoolkit, cudnn, nccl
 }:
 
 buildPythonPackage rec {
   pname = "cupy";
-  version = "4.1.0";
+  version = "8.4.0";
+  disabled = !isPy3k;
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "3e714fa21401ab1d278b648543fae56fbce97e389076ebf03b4189f88c2d61e0";
+    sha256 = "58d19af6b2e83388d4f0f6ca4226bae4b947920d2ca4951c2eddc8bc78abf66b";
   };
 
   checkInputs = [
@@ -18,9 +19,9 @@ buildPythonPackage rec {
     mock
   ];
 
-  nativeBuildInputs = [
-    gcc5
-  ];
+  preConfigure = ''
+      export CUDA_PATH=${cudatoolkit}
+  '';
 
   propagatedBuildInputs = [
     cudatoolkit
@@ -30,15 +31,18 @@ buildPythonPackage rec {
     fastrlock
     numpy
     six
+    setuptools
     wheel
   ];
 
   # In python3, test was failed...
   doCheck = !isPy3k;
 
-  meta = with stdenv.lib; {
+  enableParallelBuilding = true;
+
+  meta = with lib; {
     description = "A NumPy-compatible matrix library accelerated by CUDA";
-    homepage = https://cupy.chainer.org/;
+    homepage = "https://cupy.chainer.org/";
     license = licenses.mit;
     platforms = [ "x86_64-linux" ];
     maintainers = with maintainers; [ hyphon81 ];

@@ -1,27 +1,23 @@
-{ stdenv, fetchurl
-, pkgconfig, autoreconfHook
+{ lib, stdenv, fetchurl
+, pkg-config, autoreconfHook
 , readline, texinfo
 , gdbm, gmp, libffi }:
 
-with stdenv.lib;
+with lib;
 
 stdenv.mkDerivation rec {
-  name = "librep-${version}";
+  pname = "librep";
   version = "0.92.7";
   sourceName = "librep_${version}";
 
   src = fetchurl {
-    url = "http://download.tuxfamily.org/librep/${sourceName}.tar.xz";
+    url = "https://download.tuxfamily.org/librep/${sourceName}.tar.xz";
     sha256 = "1bmcjl1x1rdh514q9z3hzyjmjmwwwkziipjpjsl301bwmiwrd8a8";
   };
 
-  nativeBuildInputs = [ autoreconfHook pkgconfig ];
+  nativeBuildInputs = [ autoreconfHook pkg-config ];
   buildInputs = [ readline texinfo ];
   propagatedBuildInputs = [ gdbm gmp libffi ];
-
-  configureFlags = [
-    "--disable-static"
-  ];
 
   setupHook = ./setup-hook.sh;
 
@@ -33,7 +29,7 @@ stdenv.mkDerivation rec {
       machine. It can serve as an application extension language
       but is also suitable for standalone scripts.
      '';
-    homepage = http://sawfish.wikia.com;
+    homepage = "http://sawfish.wikia.com";
     license = licenses.gpl2;
     maintainers = [ maintainers.AndersonTorres ];
   };

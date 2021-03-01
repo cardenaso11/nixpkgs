@@ -14,12 +14,11 @@
 
 buildPythonPackage rec {
   pname = "ipywidgets";
-  version = "7.2.1";
-  name = "${pname}-${version}";
+  version = "7.5.1";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "ab9869cda5af7ba449d8f707b29b7e97a7db97d6366805d6b733338f51096f54";
+    sha256 = "e945f6e02854a74994c596d9db83444a1850c01648f1574adf144fbbabe05c97";
   };
 
   # Tests are not distributed
@@ -40,7 +39,7 @@ buildPythonPackage rec {
 
   meta = {
     description = "IPython HTML widgets for Jupyter";
-    homepage = http://ipython.org/;
+    homepage = "http://ipython.org/";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ fridh ];
   };

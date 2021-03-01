@@ -1,40 +1,108 @@
-{ stdenv, fetchurl, meson, ninja, intltool, gst_all_1, clutter
-, clutter-gtk, clutter-gst, python3Packages, shared-mime-info
-, pkgconfig, gtk3, glib, gobjectIntrospection
-, bash, wrapGAppsHook, itstool, libxml2, vala, gnome3, librsvg
-, gdk_pixbuf, tracker, nautilus }:
+{ lib, stdenv
+, fetchurl
+, meson
+, ninja
+, gettext
+, gst_all_1
+, clutter-gtk
+, clutter-gst
+, python3Packages
+, shared-mime-info
+, pkg-config
+, gtk3
+, glib
+, gobject-introspection
+, totem-pl-parser
+, wrapGAppsHook
+, itstool
+, libxml2
+, vala
+, gnome3
+, grilo
+, grilo-plugins
+, libpeas
+, adwaita-icon-theme
+, gnome-desktop
+, gsettings-desktop-schemas
+, gdk-pixbuf
+, xvfb_run
+}:
 
 stdenv.mkDerivation rec {
-  name = "totem-${version}";
-  version = "3.26.1";
+  pname = "totem";
+  version = "3.38.0";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/totem/${gnome3.versionBranch version}/${name}.tar.xz";
-    sha256 = "10n302fdp3lhkzbij5sbzmsnln738029xil6cnng2d4dxv4n1099";
+    url = "mirror://gnome/sources/totem/${lib.versions.majorMinor version}/${pname}-${version}.tar.xz";
+    sha256 = "0bs33ijvxbr2prb9yj4dxglsszslsn9k258n311sld84masz4ad8";
   };
 
-  doCheck = true;
-
-  NIX_CFLAGS_COMPILE = "-I${gnome3.glib.dev}/include/gio-unix-2.0";
-
-  nativeBuildInputs = [ meson ninja vala pkgconfig intltool python3Packages.python itstool gobjectIntrospection wrapGAppsHook ];
-  buildInputs = [
-    gtk3 glib gnome3.grilo clutter-gtk clutter-gst gnome3.totem-pl-parser gnome3.grilo-plugins
-    gst_all_1.gstreamer gst_all_1.gst-plugins-base gst_all_1.gst-plugins-good gst_all_1.gst-plugins-bad
-    gst_all_1.gst-plugins-ugly gst_all_1.gst-libav gnome3.libpeas shared-mime-info
-    gdk_pixbuf libxml2 gnome3.defaultIconTheme gnome3.gnome-desktop
-    gnome3.gsettings-desktop-schemas tracker nautilus
-    python3Packages.pygobject3 python3Packages.dbus-python # for plug-ins
+  nativeBuildInputs = [
+    meson
+    ninja
+    vala
+    pkg-config
+    gettext
+    python3Packages.python
+    itstool
+    gobject-introspection
+    wrapGAppsHook
   ];
+
+  buildInputs = [
+    gtk3
+    glib
+    grilo
+    clutter-gtk
+    clutter-gst
+    totem-pl-parser
+    grilo-plugins
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    gst_all_1.gst-plugins-good
+    gst_all_1.gst-plugins-bad
+    gst_all_1.gst-plugins-ugly
+    gst_all_1.gst-libav
+    libpeas
+    shared-mime-info
+    gdk-pixbuf
+    libxml2
+    adwaita-icon-theme
+    gnome-desktop
+    gsettings-desktop-schemas
+    # for plug-ins
+    python3Packages.pygobject3
+    python3Packages.dbus-python
+  ];
+
+  checkInputs = [
+    xvfb_run
+  ];
+
+  mesonFlags = [
+    # TODO: https://github.com/NixOS/nixpkgs/issues/36468
+    "-Dc_args=-I${glib.dev}/include/gio-unix-2.0"
+  ];
+
+  # Tests do not work with GStreamer 1.18.
+  # https://gitlab.gnome.org/GNOME/totem/-/issues/450
+  doCheck = false;
 
   postPatch = ''
     chmod +x meson_compile_python.py meson_post_install.py # patchShebangs requires executable file
-    patchShebangs .
+    patchShebangs \
+      ./meson_compile_python.py \
+      ./meson_post_install.py
   '';
 
-  mesonFlags = [
-    "-Dwith-nautilusdir=lib/nautilus/extensions-3.0"
-  ];
+  checkPhase = ''
+    runHook preCheck
+
+    xvfb-run -s '-screen 0 800x600x24' \
+      ninja test
+
+    runHook postCheck
+  '';
 
   wrapPrefixVariables = [ "PYTHONPATH" ];
 
@@ -45,11 +113,11 @@ stdenv.mkDerivation rec {
     };
   };
 
-  meta = with stdenv.lib; {
-    homepage = https://wiki.gnome.org/Apps/Videos;
+  meta = with lib; {
+    homepage = "https://wiki.gnome.org/Apps/Videos";
     description = "Movie player for the GNOME desktop based on GStreamer";
-    maintainers = gnome3.maintainers;
-    license = licenses.gpl2;
+    maintainers = teams.gnome.members;
+    license = licenses.gpl2Plus; # with exception to allow use of non-GPL compatible plug-ins
     platforms = platforms.linux;
   };
 }

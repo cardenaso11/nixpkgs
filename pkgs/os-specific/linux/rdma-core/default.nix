@@ -1,22 +1,24 @@
-{ stdenv, fetchFromGitHub, cmake, pkgconfig
-, ethtool, nettools, libnl, libudev, python, perl
+{ lib, stdenv, fetchFromGitHub, cmake, pkg-config, docutils
+, pandoc, ethtool, iproute, libnl, udev, python, perl
+, makeWrapper
 } :
 
 let
-  version = "17.1";
+  version = "33.1";
 
 in stdenv.mkDerivation {
-  name = "rdma-core-${version}";
+  pname = "rdma-core";
+  inherit version;
 
   src = fetchFromGitHub {
     owner = "linux-rdma";
     repo = "rdma-core";
     rev = "v${version}";
-    sha256 = "019h5q0szjccdgfk13qy0f2dxd0n1fr407b3qqq1vcmx41w9b6vz";
+    sha256 = "1p97r8ngfx1d9aq8p3f027323m7kgmk30kfrikf3jlkpr30rksbv";
   };
 
-  nativeBuildInputs = [ cmake pkgconfig ];
-  buildInputs = [ libnl ethtool nettools libudev python perl ];
+  nativeBuildInputs = [ cmake pkg-config pandoc docutils makeWrapper ];
+  buildInputs = [ libnl ethtool iproute udev python perl ];
 
   cmakeFlags = [
     "-DCMAKE_INSTALL_RUNDIR=/run"
@@ -24,17 +26,28 @@ in stdenv.mkDerivation {
   ];
 
   postPatch = ''
-    substituteInPlace providers/rxe/rxe_cfg.in \
-      --replace ethtool "${ethtool}/bin/ethtool" \
-      --replace ifconfig "${nettools}/bin/ifconfig"
+    substituteInPlace srp_daemon/srp_daemon.sh.in \
+      --replace /bin/rm rm
   '';
 
-  meta = with stdenv.lib; {
+  postInstall = ''
+    # cmake script is buggy, move file manually
+    mkdir -p $out/${perl.libPrefix}
+    mv $out/share/perl5/* $out/${perl.libPrefix}
+  '';
+
+  postFixup = ''
+    for pls in $out/bin/{ibfindnodesusing.pl,ibidsverify.pl}; do
+      echo "wrapping $pls"
+      wrapProgram $pls --prefix PERL5LIB : "$out/${perl.libPrefix}"
+    done
+  '';
+
+  meta = with lib; {
     description = "RDMA Core Userspace Libraries and Daemons";
-    homepage = https://github.com/linux-rdma/rdma-core;
-    license = licenses.gpl2;
+    homepage = "https://github.com/linux-rdma/rdma-core";
+    license = licenses.gpl2Only;
     platforms = platforms.linux;
     maintainers = with maintainers; [ markuskowa ];
   };
 }
-

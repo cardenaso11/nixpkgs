@@ -1,7 +1,7 @@
-{ stdenv, fetchFromGitHub, ... }:
+{ lib, stdenv, fetchFromGitHub, ... }:
 
-stdenv.mkDerivation rec {
-  name = "serpent-${version}";
+stdenv.mkDerivation {
+  pname = "serpent";
 
   # I can't find any version numbers, so we're just using the date
   # of the last commit.
@@ -19,7 +19,7 @@ stdenv.mkDerivation rec {
     mv serpent $out/bin
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Compiler for the Serpent language for Ethereum";
     longDescription = ''
       Serpent is one of the high-level programming languages used to
@@ -30,7 +30,7 @@ stdenv.mkDerivation rec {
       style, and at the same time adding special domain-specific
       features for contract programming.
     '';
-    homepage = https://github.com/ethereum/wiki/wiki/Serpent;
+    homepage = "https://github.com/ethereum/wiki/wiki/Serpent";
     license = with licenses; [ wtfpl ];
     maintainers = with maintainers; [ chris-martin ];
     platforms = with platforms; linux;

@@ -1,9 +1,8 @@
-{ stdenv, buildPythonPackage, fetchPypi, nose }:
+{ lib, buildPythonPackage, fetchPypi, nose }:
 
 buildPythonPackage rec {
   pname = "proboscis";
   version = "1.2.6.0";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -13,9 +12,9 @@ buildPythonPackage rec {
   propagatedBuildInputs = [ nose ];
   doCheck = false;
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A Python test framework that extends Python's built-in unittest module and Nose with features from TestNG";
-    homepage = https://pypi.python.org/pypi/proboscis;
+    homepage = "https://pypi.python.org/pypi/proboscis";
     license = licenses.asl20;
   };
 }

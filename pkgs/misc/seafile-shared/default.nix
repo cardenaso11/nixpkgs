@@ -1,32 +1,64 @@
-{stdenv, fetchurl, which, autoreconfHook, pkgconfig, curl, vala, python, intltool, fuse, ccnet}:
+{ lib, stdenv
+, fetchFromGitHub
+, autoreconfHook
+, ccnet
+, curl
+, fuse
+, glib
+, intltool
+, libevent
+, libsearpc
+, libuuid
+, pkg-config
+, python3
+, sqlite
+, vala
+, which
+}:
 
 stdenv.mkDerivation rec {
-  version = "6.1.0";
-  name = "seafile-shared-${version}";
+  pname = "seafile-shared";
+  version = "8.0.1";
 
-  src = fetchurl {
-    url = "https://github.com/haiwen/seafile/archive/v${version}.tar.gz";
-    sha256 = "03zvxk25311xgn383k54qvvpr8xbnl1vxd99fg4ca9yg5rmir1q6";
+  src = fetchFromGitHub {
+    owner = "haiwen";
+    repo = "seafile";
+    rev = "d34499a2aafa024623a4210fe7f663cef13fe9a6";
+    sha256 = "VKoGr3CTDFg3Q0X+MTlwa4BbfLB+28FeTyTJRCq37RA=";
   };
 
-  nativeBuildInputs = [ pkgconfig which autoreconfHook vala intltool ];
-  buildInputs = [ python fuse ];
-  propagatedBuildInputs = [ ccnet curl ];
+  nativeBuildInputs = [
+    autoreconfHook
+    vala
+    pkg-config
+    python3
+    python3.pkgs.wrapPython
+  ];
+
+  buildInputs = [
+    libuuid
+    sqlite
+    libsearpc
+    libevent
+    curl
+  ];
 
   configureFlags = [
     "--disable-server"
     "--disable-console"
+    "--with-python3"
   ];
 
-  postInstall = ''
-    # Remove seafile binary
-    rm -rf "$out/bin/seafile"
-    # Remove cli client binary
-    rm -rf "$out/bin/seaf-cli"
+  pythonPath = with python3.pkgs; [
+    libsearpc
+  ];
+
+  postFixup = ''
+    wrapPythonPrograms
   '';
 
-  meta = with stdenv.lib; {
-    homepage = https://github.com/haiwen/seafile;
+  meta = with lib; {
+    homepage = "https://github.com/haiwen/seafile";
     description = "Shared components of Seafile: seafile-daemon, libseafile, libseafile python bindings, manuals, and icons";
     license = licenses.gpl3;
     platforms = platforms.linux;

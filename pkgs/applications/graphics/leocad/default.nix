@@ -3,17 +3,17 @@ To use aditional parts libraries
 set the variable LEOCAD_LIB=/path/to/libs/ or use option -l /path/to/libs/
 */
 
-{ stdenv, fetchFromGitHub, qt4, qmake4Hook, zlib }:
+{ lib, stdenv, fetchFromGitHub, qt4, qmake4Hook, zlib }:
 
 stdenv.mkDerivation rec {
-  name = "leocad-${version}";
-  version = "18.02";
+  pname = "leocad";
+  version = "19.07.1";
 
   src = fetchFromGitHub {
     owner = "leozide";
     repo = "leocad";
     rev = "v${version}";
-    sha256 = "0rb4kjyrr9ry85cfpbk52l19vvwn7lrh2kmj2lwq531smnygn5m3";
+    sha256 = "02kv1m18g6s4dady9jv4sjivfkrp192bmdw2a3d9lzlp60zks0p2";
   };
 
   nativeBuildInputs = [ qmake4Hook ];
@@ -22,9 +22,9 @@ stdenv.mkDerivation rec {
     export qmakeFlags="$qmakeFlags INSTALL_PREFIX=$out"
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "CAD program for creating virtual LEGO models";
-    homepage = https://www.leocad.org/;
+    homepage = "https://www.leocad.org/";
     license = licenses.gpl2;
     platforms = platforms.linux;
   };

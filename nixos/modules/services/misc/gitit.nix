@@ -10,7 +10,7 @@ let
 
   toYesNo = b: if b then "yes" else "no";
 
-  gititShared = with cfg.haskellPackages; gitit + "/share/" + pkgs.stdenv.system + "-" + ghc.name + "/" + gitit.pname + "-" + gitit.version;
+  gititShared = with cfg.haskellPackages; gitit + "/share/" + pkgs.stdenv.hostPlatform.system + "-" + ghc.name + "/" + gitit.pname + "-" + gitit.version;
 
   gititWithPkgs = hsPkgs: extras: hsPkgs.ghcWithPackages (self: with self; [ gitit ] ++ (extras self));
 
@@ -42,6 +42,7 @@ let
       };
 
       extraPackages = mkOption {
+        type = types.functionTo (types.listOf types.package);
         default = self: [];
         example = literalExample ''
           haskellPackages: [
@@ -645,15 +646,15 @@ in
 
   config = mkIf cfg.enable {
 
-    users.extraUsers.gitit = {
-      group = config.users.extraGroups.gitit.name;
+    users.users.gitit = {
+      group = config.users.groups.gitit.name;
       description = "Gitit user";
       home = homeDir;
       createHome = true;
       uid = config.ids.uids.gitit;
     };
 
-    users.extraGroups.gitit.gid = config.ids.gids.gitit;
+    users.groups.gitit.gid = config.ids.gids.gitit;
 
     systemd.services.gitit = let
       uid = toString config.ids.uids.gitit;
@@ -715,8 +716,8 @@ NAMED
       '';
 
       serviceConfig = {
-        User = config.users.extraUsers.gitit.name;
-        Group = config.users.extraGroups.gitit.name;
+        User = config.users.users.gitit.name;
+        Group = config.users.groups.gitit.name;
         ExecStart = with cfg; gititSh haskellPackages extraPackages;
       };
     };

@@ -6,7 +6,6 @@
 buildPythonPackage rec {
   pname = "pyblake2";
   version = "1.1.2";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -19,6 +18,6 @@ buildPythonPackage rec {
   meta = {
     description = "BLAKE2 hash function extension module";
     license = lib.licenses.publicDomain;
-    homepage = https://github.com/dchest/pyblake2;
+    homepage = "https://github.com/dchest/pyblake2";
   };
 }

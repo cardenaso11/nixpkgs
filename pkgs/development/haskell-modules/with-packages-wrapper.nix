@@ -1,4 +1,4 @@
-{ lib, targetPlatform, ghc, llvmPackages, packages, symlinkJoin, makeWrapper
+{ lib, stdenv, ghc, llvmPackages, packages, symlinkJoin, makeWrapper
 , withLLVM ? false
 , postBuild ? ""
 , ghcLibdir ? null # only used by ghcjs, when resolving plugins
@@ -38,18 +38,17 @@ let
   ghcCommand'    = if isGhcjs then "ghcjs" else "ghc";
   ghcCommand = "${ghc.targetPrefix}${ghcCommand'}";
   ghcCommandCaps= lib.toUpper ghcCommand';
-  # libDir        = if isHaLVM then "$out/lib/HaLVM-${ghc.version}" else if isGhcjs then "$out/libexec" else "$out/lib/${ghcCommand}-${ghc.version}";
-  libDir         = "$out/libexec";
+  libDir        = if isHaLVM then "$out/lib/HaLVM-${ghc.version}"
+                  else "$out/lib/${ghcCommand}-${ghc.version}";
   docDir        = "$out/share/doc/ghc/html";
-  # packageCfgDir = "${libDir}/package.conf.d";
-  packageCfgDir = "$out/libexec/package.conf.d";
+  packageCfgDir = "${libDir}/package.conf.d";
   paths         = lib.filter (x: x ? isHaskellLibrary) (lib.closePropagation packages);
   hasLibraries  = lib.any (x: x.isHaskellLibrary) paths;
   # CLang is needed on Darwin for -fllvm to work:
   # https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/codegens.html#llvm-code-generator-fllvm
   llvm          = lib.makeBinPath
                   ([ llvmPackages.llvm ]
-                   ++ lib.optional targetPlatform.isDarwin llvmPackages.clang);
+                   ++ lib.optional stdenv.targetPlatform.isDarwin llvmPackages.clang);
 in
 if paths == [] && !withLLVM then ghc else
 symlinkJoin {
@@ -94,9 +93,7 @@ symlinkJoin {
     for prg in ${ghcCommand}-pkg ${ghcCommand}-pkg-${ghc.version}; do
       if [[ -x "${ghc}/bin/$prg" ]]; then
         rm -f $out/bin/$prg
-        #makeWrapper ${ghc}/bin/$prg $out/bin/$prg --add-flags "${packageDBFlag}=${packageCfgDir}"
-        makeWrapper ${ghc}/bin/$prg $out/bin/$prg --add-flags "${packageDBFlag}=${packageCfgDir}" --add-flags "--user-package-db=$out/lib/${ghcCommand}/package.conf.d"
-
+        makeWrapper ${ghc}/bin/$prg $out/bin/$prg --add-flags "${packageDBFlag}=${packageCfgDir}"
       fi
     done
 
@@ -108,7 +105,7 @@ symlinkJoin {
         --set "NIX_${ghcCommandCaps}_LIBDIR" "${libDir}"
     fi
 
-  '' + (lib.optionalString targetPlatform.isDarwin ''
+  '' + (lib.optionalString (stdenv.targetPlatform.isDarwin && !isGhcjs && !stdenv.targetPlatform.isiOS) ''
     # Work around a linker limit in macOS Sierra (see generic-builder.nix):
     local packageConfDir="$out/lib/${ghc.name}/package.conf.d";
     local dynamicLinksDir="$out/lib/links"
@@ -116,7 +113,7 @@ symlinkJoin {
     # Clean up the old links that may have been (transitively) included by
     # symlinkJoin:
     rm -f $dynamicLinksDir/*
-    for d in $(grep dynamic-library-dirs $packageConfDir/*|awk '{print $2}'|sort -u); do
+    for d in $(grep -Poz "dynamic-library-dirs:\s*\K .+\n" $packageConfDir/*|awk '{print $2}'|sort -u); do
       ln -s $d/*.dylib $dynamicLinksDir
     done
     for f in $packageConfDir/*.conf; do
@@ -126,11 +123,22 @@ symlinkJoin {
       # $dynamicLinksDir
       cp $f $f-tmp
       rm $f
-      sed "s,dynamic-library-dirs: .*,dynamic-library-dirs: $dynamicLinksDir," $f-tmp > $f
+      sed "N;s,dynamic-library-dirs:\s*.*,dynamic-library-dirs: $dynamicLinksDir," $f-tmp > $f
       rm $f-tmp
     done
   '') + ''
-    ${lib.optionalString hasLibraries "$out/bin/${ghcCommand}-pkg recache"}
+    ${lib.optionalString hasLibraries ''
+     # GHC 8.10 changes.
+     # Instead of replacing package.cache[.lock] with the new file,
+     # ghc-pkg is now trying to open the file.  These file are symlink
+     # to another nix derivation, so they are not writable.  Removing
+     # them allow the correct behavior of ghc-pkg recache
+     # See: https://github.com/NixOS/nixpkgs/issues/79441
+     rm $out/lib/${ghc.name}/package.conf.d/package.cache.lock
+     rm $out/lib/${ghc.name}/package.conf.d/package.cache
+
+     $out/bin/${ghcCommand}-pkg recache
+     ''}
     ${# ghcjs will read the ghc_libdir file when resolving plugins.
       lib.optionalString (isGhcjs && ghcLibdir != null) ''
       mkdir -p "${libDir}"

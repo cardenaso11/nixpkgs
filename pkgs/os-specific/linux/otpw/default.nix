@@ -1,10 +1,10 @@
-{ stdenv, fetchurl, pam }:
+{ lib, stdenv, fetchurl, pam }:
 
 stdenv.mkDerivation rec {
   name = "otpw-1.3";
 
   src = fetchurl {
-    url = "http://www.cl.cam.ac.uk/~mgk25/download/${name}.tar.gz";
+    url = "https://www.cl.cam.ac.uk/~mgk25/download/${name}.tar.gz";
     sha256 = "1k3hc7xbxz6hkc55kvddi3cibafwf93ivn58sy1l888d3l5dwmrk";
   };
 
@@ -27,9 +27,9 @@ stdenv.mkDerivation rec {
   hardeningDisable = [ "stackprotector" ];
 
   meta = {
-    homepage = http://www.cl.cam.ac.uk/~mgk25/otpw.html;
+    homepage = "http://www.cl.cam.ac.uk/~mgk25/otpw.html";
     description = "A one-time password login package";
-    license = stdenv.lib.licenses.gpl2Plus;
-    platforms = stdenv.lib.platforms.linux;
+    license = lib.licenses.gpl2Plus;
+    platforms = lib.platforms.linux;
   };
 }

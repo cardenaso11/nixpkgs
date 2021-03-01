@@ -1,7 +1,8 @@
-{ stdenv, appleDerivation, xcbuild, zlib, bzip2, lzma, ncurses, libutil-new }:
+{ lib, appleDerivation, xcbuildHook, zlib, bzip2, lzma, ncurses, libutil }:
 
-appleDerivation rec {
-  buildInputs = [ xcbuild zlib bzip2 lzma ncurses libutil-new ];
+appleDerivation {
+  nativeBuildInputs = [ xcbuildHook ];
+  buildInputs = [ zlib bzip2 lzma ncurses libutil ];
 
   # some commands not working:
   # mtree: _simple.h not found
@@ -18,8 +19,11 @@ appleDerivation rec {
 
   # temporary install phase until xcodebuild has "install" support
   installPhase = ''
-    mkdir -p $out/bin/
-    install Products/Release/* $out/bin
+    for f in Products/Release/*; do
+      if [ -f $f ]; then
+        install -D $f $out/bin/$(basename $f)
+      fi
+    done
 
     for n in 1; do
       mkdir -p $out/share/man/man$n
@@ -28,7 +32,7 @@ appleDerivation rec {
   '';
 
   meta = {
-    platforms = stdenv.lib.platforms.darwin;
-    maintainers = with stdenv.lib.maintainers; [ matthewbauer ];
+    platforms = lib.platforms.darwin;
+    maintainers = with lib.maintainers; [ matthewbauer ];
   };
 }

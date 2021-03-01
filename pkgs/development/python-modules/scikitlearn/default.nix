@@ -1,34 +1,67 @@
-{ stdenv, buildPythonPackage, fetchpatch, fetchPypi, python
-, nose, pillow
+{ stdenv
+, lib
+, buildPythonPackage
+, fetchPypi
+, fetchpatch
 , gfortran, glibcLocales
-, numpy, scipy
+, numpy, scipy, pytest, pillow
+, cython
+, joblib
+, llvmPackages
+, threadpoolctl
 }:
 
 buildPythonPackage rec {
   pname = "scikit-learn";
-  version = "0.19.1";
+  version = "0.24.1";
+  # UnboundLocalError: local variable 'message' referenced before assignment
   disabled = stdenv.isi686;  # https://github.com/scikit-learn/scikit-learn/issues/5534
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "5ca0ad32ee04abe0d4ba02c8d89d501b4e5e0304bdf4d45c2e9875a735b323a0";
+    sha256 = "oDNKGALmTWVgIsO/q1anP71r9LEpg0PzaIryFRgQu98=";
   };
 
-  buildInputs = [ nose pillow gfortran glibcLocales ];
-  propagatedBuildInputs = [ numpy scipy numpy.blas ];
+  buildInputs = [
+    pillow
+    gfortran
+    glibcLocales
+  ] ++ lib.optionals stdenv.cc.isClang [
+    llvmPackages.openmp
+  ];
+
+  nativeBuildInputs = [
+    cython
+  ];
+
+  propagatedBuildInputs = [
+    numpy
+    scipy
+    numpy.blas
+    joblib
+    threadpoolctl
+  ];
+  checkInputs = [ pytest ];
 
   LC_ALL="en_US.UTF-8";
 
-  # Disable doctests on OSX: https://github.com/scikit-learn/scikit-learn/issues/10213
-  # Disable doctests everywhere: https://github.com/NixOS/nixpkgs/issues/35436
+  doCheck = !stdenv.isAarch64;
+  # Skip test_feature_importance_regression - does web fetch
   checkPhase = ''
-    HOME=$TMPDIR OMP_NUM_THREADS=1 nosetests --doctest-options=+SKIP $out/${python.sitePackages}/sklearn/
+    cd $TMPDIR
+    HOME=$TMPDIR OMP_NUM_THREADS=1 pytest -k "not test_feature_importance_regression" --pyargs sklearn
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A set of python modules for machine learning and data mining";
-    homepage = http://scikit-learn.org;
+    changelog = let
+      major = versions.major version;
+      minor = versions.minor version;
+      dashVer = replaceChars ["."] ["-"] version;
+    in
+      "https://scikit-learn.org/stable/whats_new/v${major}.${minor}.html#version-${dashVer}";
+    homepage = "https://scikit-learn.org";
     license = licenses.bsd3;
-    maintainers = with maintainers; [ fridh ];
+    maintainers = with maintainers; [ ];
   };
 }

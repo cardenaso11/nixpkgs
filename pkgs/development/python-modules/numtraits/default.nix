@@ -10,7 +10,6 @@
 buildPythonPackage rec {
   pname = "numtraits";
   version = "0.2";
-  name = "${pname}-${version}";
 
   src = fetchPypi {
     inherit pname version;
@@ -28,6 +27,6 @@ buildPythonPackage rec {
     description = "Numerical traits for Python objects";
     license = lib.licenses.bsd2;
     maintainers = with lib.maintainers; [ fridh ];
-    homepage = https://github.com/astrofrog/numtraits;
+    homepage = "https://github.com/astrofrog/numtraits";
   };
 }

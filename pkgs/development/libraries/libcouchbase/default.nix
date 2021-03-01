@@ -1,27 +1,31 @@
-{ stdenv, fetchFromGitHub, cmake, pkgconfig, libevent, openssl}:
+{ lib, stdenv, fetchFromGitHub, cmake, pkg-config, libevent, openssl}:
 
 stdenv.mkDerivation rec {
-  name = "libcouchbase-${version}";
-  version = "2.9.0";
+  pname = "libcouchbase";
+  version = "2.10.4";
 
   src = fetchFromGitHub {
     owner = "couchbase";
     repo = "libcouchbase";
     rev = version;
-    sha256 = "12s2iw4akil3hlvsccns7qw2c90yw5h67zj3wq03q938w8xcw0d0";
+    sha256 = "1yfmcx65aqd5l87scha6kmm2s38n85ci3gg0h6qfs16s3jfi6bw7";
   };
 
-  cmakeFlags = "-DLCB_NO_MOCK=ON";
+  cmakeFlags = [ "-DLCB_NO_MOCK=ON" ];
 
-  nativeBuildInputs = [ cmake pkgconfig ];
+  nativeBuildInputs = [ cmake pkg-config ];
   buildInputs = [ libevent openssl ];
 
-  doCheck = (!stdenv.isDarwin);
-  checkPhase = "ctest";
+  # Running tests in parallel does not work
+  enableParallelChecking = false;
 
-  meta = with stdenv.lib; {
+  patches = [ ./0001-Fix-timeouts-in-libcouchbase-testsuite.patch ];
+
+  doCheck = !stdenv.isDarwin;
+
+  meta = with lib; {
     description = "C client library for Couchbase";
-    homepage = https://github.com/couchbase/libcouchbase;
+    homepage = "https://github.com/couchbase/libcouchbase";
     license = licenses.asl20;
     platforms = platforms.unix;
   };
